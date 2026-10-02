@@ -1,15 +1,15 @@
 ---
 name: moodle-course-profile
-description: Course profiles built from the syllabus of each Moodle course (FH JOANNEUM) — how a course is graded (components, weights, what must be passed separately, pass rules, retakes), whether and how AI may be used, attendance, exemption exams, tools, topics. Use this skill to build or update the profiles ("read my syllabi", "set up my courses", "составь профили курсов"), and whenever the user asks about the rules of a course, in any language — "how is DQL graded", "what do I need to pass statistics", "how much is the homework worth", "can I use AI in MNS", "сколько весит домашка", "что обязательно сдать", "можно ли пользоваться ИИ", "wie wird der Kurs benotet". Other moodle skills read these profiles; build them first if they are missing.
+description: Course profiles built from the syllabus of each Moodle course (FH JOANNEUM) — how a course is graded (components, weights, what must be passed separately, pass rules, retakes), attendance, exemption exams, tools, topics. Use this skill to build or update the profiles ("read my syllabi", "set up my courses", "составь профили курсов"), and whenever the user asks about the rules of a course, in any language — "how is DQL graded", "what do I need to pass statistics", "how much is the homework worth", "сколько весит домашка", "что обязательно сдать", "wie wird der Kurs benotet". Other moodle skills read these profiles; build them first if they are missing.
 allowed-tools: mcp__moodle__moodle_courses, mcp__moodle__moodle_search, mcp__moodle__moodle_course_contents, mcp__moodle__moodle_download, Read, Write, Bash(python3:*)
 ---
 
 # Course profiles
 
 Moodle says *what* is due and *when*; the syllabus says *by which rules*: weights, components
-that must be passed on their own, the AI policy, attendance. A profile captures those rules once
+that must be passed on their own, attendance. A profile captures those rules once
 per semester in a small JSON file, so every answer about grades, assignments and priorities can
-use them — and so you never help a student break a course's AI policy.
+use them.
 
 Profiles live **on the user's machine**, not in any repository (they name lecturers and belong
 to one programme): `$MOODLE_PROFILES_DIR`, default `~/.config/moodle-mcp/courses/`, one file per
@@ -40,10 +40,6 @@ Reply in the user's language; keep component names and quotes in the original.
    - `must_pass` is true only where the syllabus ticks ☒ Yes.
    - Put extra conditions from "Additional comments" into `pass_rules` / `notes`
      (e.g. "≥ 61 % on the written exam", "homework points carry over to the next attempt").
-   - `ai_policy.level`: `none` (no AI at all) · `learning_only` (to study, never for submitted
-     work) · `homework` (allowed for homework/exercises, never in assessments; work must be
-     explainable) · `allowed_except_assessments` (allowed as a tool except during assessments).
-     Keep the original sentence in `ai_policy.quote`.
    - Leave out what the syllabus does not say. Never fill gaps with typical values.
 4. Validate and save:
 
@@ -74,8 +70,6 @@ python3 <skill base dir>/scripts/profile.py table                       # overvi
     "pass_rules": ["…"],
     "notes": ["Points obtained from homework assignments are carried over to the next attempt."]
   },
-  "ai_policy": {"level": "homework", "summary": "AI not in written or code assessments; homework code must be explainable.",
-                "quote": "The use of AI tools is permitted in neither the written nor the code assessments. …"},
   "attendance": {"min_percent": 75, "online_camera": true},
   "exemption_exam": {"available": false},
   "tools": ["R", "Python", "Git"],

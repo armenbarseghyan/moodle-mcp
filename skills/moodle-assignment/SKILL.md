@@ -14,11 +14,10 @@ Reply in the user's language; keep task wording, numbering and file names in the
 
 ## Steps
 
-0. **Read the course profile first** (if it exists). Course profiles (skill moodle-course-profile) hold each course's rules from the syllabus:
-`$MOODLE_PROFILES_DIR`, default `~/.config/moodle-mcp/courses/<programme>/<CODE>.json`.
-   It tells you how much this kind of work counts, whether a component must be passed on its
-   own, and — most important — the course's **AI policy**, which decides how you may help
-   (see "Helping within the AI policy").
+0. **Read the course profile first**, if it exists (skill moodle-course-profile;
+   `$MOODLE_PROFILES_DIR`, default `~/.config/moodle-mcp/courses/<programme>/<CODE>.json`).
+   It tells you how much this kind of work counts and whether a component must be passed on
+   its own.
 1. **Find the assignment and its status.** `moodle_deadlines(days=30)` has the due date
    (including a personal extension, if any) and the submission status. If it is not there, it
    has no due date, is hidden or already past: try `moodle_deadlines(days=90)` and
@@ -34,22 +33,6 @@ Reply in the user's language; keep task wording, numbering and file names in the
    code") is the most likely way to lose points on this one. If the assignment itself is
    already graded, this also gives its score and feedback.
 
-## Helping within the AI policy
-
-The student will be asked to explain their work, and unauthorised AI use is academic
-misconduct at FH. So match your help to `ai_policy.level`:
-
-| level | how to help |
-|---|---|
-| `none` | explain concepts, point to lecture material, check understanding with questions. No solutions, no code or calculations for the task itself. |
-| `learning_only` | explain and study together; nothing that ends up in the submission (no solution text, code or edits of their work). |
-| `homework` | homework/exercises may be supported, but the student must be able to explain every line: guide step by step, let them write, review and explain. Never in assessments. |
-| `allowed_except_assessments` | full help on assignments; make sure they understand it. Never during assessments (tests, exams, quizzes). |
-
-If the user asks for a ready-made solution where the policy does not allow it, say so plainly,
-quote the policy, and offer the help that is allowed — don't lecture. No profile? Say you don't
-know the course's AI rules yet and offer to read the syllabus (moodle-course-profile).
-
 ## Output
 
 Template (write the headings in the user's language):
@@ -62,7 +45,7 @@ Template (write the headings in the user's language):
 | **<date time>** | <in N days> | ❌ not submitted / 📝 draft / ✅ submitted |
 
 **Counts for:** <component and weight from the profile, e.g. "Homework Assignments, 30 % of the
-grade, not a must-pass" — omit without a profile> · **AI:** <policy in a few words>
+grade, not a must-pass" — omit without a profile>
 
 **Hand in:** <format: file / folder / repository, names, where — exactly as the task says>
 

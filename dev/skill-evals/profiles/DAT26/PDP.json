@@ -89,11 +89,6 @@
       "Suspected non-independent work can lead to an additional oral examination."
     ]
   },
-  "ai_policy": {
-    "level": "homework",
-    "summary": "No AI in written or code assessments; AI may help with homework, but the code must be explainable in detail.",
-    "quote": "The use of AI tools is permitted in neither the written nor the code assessments. If AI tools are used for homework assignments, their output must be critically examined. Students must be able to explain the submitted code in detail."
-  },
   "attendance": {
     "min_percent": 75,
     "online_camera": true

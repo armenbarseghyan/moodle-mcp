@@ -87,11 +87,6 @@
       "Repeating the first three criteria is mandatory if the 1st-attempt submission is missing or insufficient (usually < 50 %)."
     ]
   },
-  "ai_policy": {
-    "level": "allowed_except_assessments",
-    "summary": "AI allowed as a tool except in assessments; students are responsible for all AI output.",
-    "quote": "Generative AI is permitted as a tool, except for assessments, but all AI-generated or AI-modified texts and code have to be critically checked by the students and they take full responsibility for their submissions"
-  },
   "attendance": {
     "min_percent": 75,
     "online_camera": true

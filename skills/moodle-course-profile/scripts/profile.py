@@ -16,11 +16,8 @@ import os
 import re
 import sys
 
-LEVELS = ["none", "learning_only", "homework", "allowed_except_assessments"]
 KINDS = {"exam", "test", "homework", "project", "participation", "presentation",
          "self_assessment", "oral", "other"}
-LEVEL_LABEL = {"none": "⛔ no AI", "learning_only": "📖 learning only", "homework": "📝 homework only",
-               "allowed_except_assessments": "✅ allowed (not in assessments)"}
 
 
 def base_dir():
@@ -30,7 +27,7 @@ def base_dir():
 def check(p):
     errs = []
     req = {"schema": int, "programme": str, "code": str, "name": str, "ects": (int, float),
-           "continuous_assessment": bool, "assessment": dict, "ai_policy": dict}
+           "continuous_assessment": bool, "assessment": dict}
     for k, t in req.items():
         if k not in p:
             errs.append(f"{k} is required")
@@ -61,11 +58,6 @@ def check(p):
             total = sum(c.get("weight", 0) for c in comps if isinstance(c.get("weight"), (int, float)))
             if abs(total - 100) > 0.01:
                 errs.append(f"assessment.{attempt} weights add up to {total:g}, not 100 — a row is missing or mistyped")
-    ai = p["ai_policy"]
-    if ai.get("level") not in LEVELS:
-        errs.append(f"ai_policy.level must be one of {LEVELS}")
-    if not ai.get("quote"):
-        errs.append("ai_policy.quote must keep the syllabus sentence")
     src = p.get("source", {})
     if src.get("url") and ("token=" in src["url"] or "/webservice/" in src["url"]):
         errs.append("source.url must be a browser link (no token, no /webservice/)")
@@ -95,12 +87,12 @@ def table():
         parts = "; ".join(f"{c['name']} {c['weight']:g}{' ★' if c['must_pass'] else ''}" for c in comps)
         rules = "; ".join(p["assessment"].get("pass_rules", []))
         rows.append(f"| **{p['code']}** {p['name']} | {p['ects']:g} | {parts}"
-                    f"{(' — ' + rules) if rules else ''} | {LEVEL_LABEL[p['ai_policy']['level']]} | "
+                    f"{(' — ' + rules) if rules else ''} | "
                     f"{'✓' if p.get('verified') else '—'} |")
     if not rows:
         return f"No profiles in {base_dir()} yet."
-    head = ("| Course | ECTS | Assessment, 1st attempt (★ = must pass separately) | AI | Verified |\n"
-            "|---|---|---|---|---|")
+    head = ("| Course | ECTS | Assessment, 1st attempt (★ = must pass separately) | Verified |\n"
+            "|---|---|---|---|")
     ects = sum(load(p)["ects"] for p in glob.glob(os.path.join(base_dir(), "*", "*.json")))
     return head + "\n" + "\n".join(rows) + f"\n\nTotal: {ects:g} ECTS"
 

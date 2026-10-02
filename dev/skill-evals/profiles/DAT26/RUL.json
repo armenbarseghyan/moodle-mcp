@@ -61,11 +61,6 @@
       "Lecturer may add tasks or an oral exam in special cases (e.g. narrow fails, suspicious submissions)."
     ]
   },
-  "ai_policy": {
-    "level": "allowed_except_assessments",
-    "summary": "No AI in written assessments; for presentations AI output must be critically evaluated and explainable.",
-    "quote": "AI use is not permitted for written assessments. If AI is used to support the preparation of presentations, students must critically evaluate all AI-generated content."
-  },
   "attendance": {
     "min_percent": 75,
     "online_camera": true
