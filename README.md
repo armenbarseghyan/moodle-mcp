@@ -84,6 +84,20 @@ claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "
 PDF читается без внешних утилит; пробелы восстанавливаются по координатам глифов, а слова от
 6 букв сопоставляются и без учёта пробелов — PDF часто теряет или вставляет их.
 
+## Скиллы
+
+Шесть скиллов для Claude Code — брифинг, поиск материалов с ответом по содержимому, разбор
+задания, оценки, визуальный дашборд и диагностика — лежат в [skills/](skills/README.md):
+
+```bash
+make install-skills
+```
+
+## Для одногруппников
+
+Пошаговая инструкция — получить токен, собрать, подключить к Claude Code или Claude Desktop:
+[docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md) (English) · [docs/STUDENT-SETUP.ru.md](docs/STUDENT-SETUP.ru.md) (русский).
+
 ## Разработка
 
 ```bash
@@ -91,7 +105,10 @@ make test      # go test -race ./...
 make cover     # покрытие
 make lint      # go vet + golangci-lint v2 (через go run, ставить не нужно)
 make golden    # перезаписать эталонный вывод инструментов (testdata/golden)
+make dev       # bin/fakemoodle (фейковый Moodle) и bin/mcpcall (вызов инструмента из shell)
 ```
+
+Проверка скиллов: `dev/skill-evals/` — набор сценариев, оценщик и описание прогона.
 
 Тесты не ходят в сеть: фейковый Moodle (`internal/moodletest`) отдаёт фикстуры
 `testdata/moodle/<wsfunction>.<scenario>.json` — реальные ответы (обезличенные, `*.real*`)

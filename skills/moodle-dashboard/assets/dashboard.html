@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f6f7fb; --surface: #ffffff; --surface-2: #f1f3f9; --border: #e3e6ef;
+  --text: #161a26; --muted: #5d6478; --faint: #8a90a2;
+  --accent: #4f46e5; --accent-soft: #eef0ff;
+  --red: #dc2626; --red-soft: #fdecec; --amber: #b45309; --amber-soft: #fff4e0;
+  --green: #15803d; --green-soft: #e8f6ec; --blue: #1d4ed8; --blue-soft: #e8efff;
+  --grey-soft: #eef0f4;
+  --hero-1: #4f46e5; --hero-2: #7c3aed; --hero-3: #0ea5e9;
+  --shadow: 0 1px 2px rgba(16,24,40,.04), 0 4px 16px rgba(16,24,40,.06);
+  --radius: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1017; --surface: #151a24; --surface-2: #1b2130; --border: #262d3d;
+    --text: #e8ebf3; --muted: #a2a9bb; --faint: #737b8f;
+    --accent: #8b85ff; --accent-soft: #23234a;
+    --red: #f87171; --red-soft: #3a1d22; --amber: #fbbf24; --amber-soft: #3a2f16;
+    --green: #4ade80; --green-soft: #15301f; --blue: #7aa2ff; --blue-soft: #1a2647;
+    --grey-soft: #222838;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d1017; --surface: #151a24; --surface-2: #1b2130; --border: #262d3d;
+  --text: #e8ebf3; --muted: #a2a9bb; --faint: #737b8f;
+  --accent: #8b85ff; --accent-soft: #23234a;
+  --red: #f87171; --red-soft: #3a1d22; --amber: #fbbf24; --amber-soft: #3a2f16;
+  --green: #4ade80; --green-soft: #15301f; --blue: #7aa2ff; --blue-soft: #1a2647;
+  --grey-soft: #222838;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.55 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+
+/* hero */
+.hero {
+  position: relative; overflow: hidden; border-radius: 24px; padding: 28px 28px 24px; color: #fff;
+  background: radial-gradient(1200px 400px at 0% 0%, var(--hero-3) 0%, transparent 60%),
+              linear-gradient(120deg, var(--hero-1), var(--hero-2));
+  box-shadow: var(--shadow);
+}
+.hero::after {
+  content: ""; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+.hero .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .8; font-weight: 600; }
+.hero h1 { margin: 6px 0 4px; font-size: clamp(24px, 4vw, 34px); line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
+.hero .sub { opacity: .9; font-size: 14px; }
+.hero .theme-toggle {
+  position: absolute; right: 16px; top: 16px; z-index: 1; border: 0; cursor: pointer;
+  background: rgba(255,255,255,.18); color: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 13px;
+}
+
+/* kpis */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 16px 0 24px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.kpi .n { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.kpi .l { color: var(--muted); font-size: 13px; }
+.kpi.red .n { color: var(--red); } .kpi.amber .n { color: var(--amber); } .kpi.green .n { color: var(--green); } .kpi.blue .n { color: var(--blue); }
+
+/* layout */
+.grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+section { margin-bottom: 20px; }
+h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin: 0 0 10px 4px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+/* urgent */
+.urgent { display: grid; gap: 10px; }
+.alert {
+  display: grid; grid-template-columns: 5px 1fr; overflow: hidden;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.alert > div:last-child { padding: 14px 16px; }
+.alert .bar { background: var(--red); }
+.alert.amber .bar { background: var(--amber); }
+.alert .t { font-weight: 700; }
+.alert .m { color: var(--muted); font-size: 13.5px; }
+.alert .note { margin-top: 4px; font-size: 13.5px; }
+.calm { padding: 16px 18px; color: var(--muted); }
+
+/* timeline */
+.day { padding: 14px 18px; border-top: 1px solid var(--border); }
+.day:first-child { border-top: 0; }
+.day-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.day-h .d { font-weight: 700; }
+.day-h .r { color: var(--faint); font-size: 13px; }
+.item { display: grid; grid-template-columns: 54px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; }
+.item .time { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 13px; color: var(--muted); }
+.item .title { font-weight: 600; }
+.item .course { color: var(--muted); font-size: 13px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 999px;
+  padding: 3px 10px; font-size: 12.5px; font-weight: 600; background: var(--grey-soft); color: var(--muted);
+}
+.chip.done { background: var(--green-soft); color: var(--green); }
+.chip.draft { background: var(--amber-soft); color: var(--amber); }
+.chip.todo, .chip.overdue { background: var(--red-soft); color: var(--red); }
+.chip.na { background: var(--blue-soft); color: var(--blue); }
+.kind { font-size: 12px; color: var(--faint); margin-left: 6px; }
+
+/* announcements */
+.ann { padding: 14px 18px; border-top: 1px solid var(--border); }
+.ann:first-child { border-top: 0; }
+.ann .h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.ann .t { font-weight: 700; }
+.ann .meta { color: var(--faint); font-size: 12.5px; white-space: nowrap; }
+.ann .course { color: var(--accent); font-size: 12.5px; font-weight: 600; }
+.ann .s { margin: 6px 0 0; }
+.ann blockquote { margin: 8px 0 0; padding: 6px 12px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 10px 10px 0; font-size: 13.5px; color: var(--text); }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: middle; }
+
+/* grades */
+.grade { padding: 12px 18px; border-top: 1px solid var(--border); }
+.grade:first-child { border-top: 0; }
+.grade .h { display: flex; justify-content: space-between; gap: 8px; }
+.grade .v { font-weight: 700; }
+.meter { height: 6px; border-radius: 99px; background: var(--grey-soft); margin-top: 8px; overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--hero-1), var(--hero-3)); }
+.grade .c { color: var(--muted); font-size: 12.5px; }
+
+.courses { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
+.courses a { background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--text); }
+.notes { color: var(--faint); font-size: 13px; padding: 0 4px; }
+.empty { padding: 16px 18px; color: var(--muted); }
+footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: center; }
+
+/* calendar */
+.cal { padding: 14px 16px 16px; margin-bottom: 20px; }
+.cal-head, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-head div { font-size: 11.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; text-align: center; padding-bottom: 4px; }
+.cell { min-height: 76px; border: 1px solid var(--border); border-radius: 10px; padding: 6px 7px; background: var(--surface-2); overflow: hidden; }
+.cell.past { opacity: .62; }
+.cell.past .ev.overdue { opacity: 1; }
+.cell.today { border: 2px solid var(--accent); background: var(--accent-soft); }
+.cell .num { font-size: 12px; font-weight: 700; color: var(--muted); }
+.cell.today .num { color: var(--accent); }
+.ev { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.3; padding: 3px 6px; border-radius: 6px;
+      background: var(--grey-soft); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev.done, .ev.graded { background: var(--green-soft); color: var(--green); }
+.ev.todo, .ev.overdue, .ev.reopened { background: var(--red-soft); color: var(--red); }
+.ev.draft { background: var(--amber-soft); color: var(--amber); }
+.ev.na, .ev.unknown { background: var(--blue-soft); color: var(--blue); }
+.ev.ann { background: var(--accent-soft); color: var(--accent); }
+
+/* plan */
+.plan { margin: 0; padding: 14px 18px 14px 38px; }
+.plan li { margin: 4px 0; }
+.plan li::marker { color: var(--accent); font-weight: 700; }
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 600px) {
+  .cell { min-height: 46px; padding: 4px; }
+  .ev { font-size: 0; padding: 0; height: 6px; margin-top: 3px; border-radius: 3px; background: currentColor; }
+  .ev.ann { background: var(--accent); }
+}
+@media (max-width: 480px) {
+  .hero { padding: 22px 18px; border-radius: 18px; }
+  .item { grid-template-columns: 46px 1fr; }
+  .item .chip { grid-column: 2; justify-self: start; }
+  .ann .h { flex-direction: column; }
+}
+@media print {
+  body { background: #fff; } .theme-toggle { display: none; } .card, .kpi, .alert { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <button class="theme-toggle" type="button" id="theme">◐</button>
+    <div class="eyebrow" id="eyebrow">Moodle · FH JOANNEUM</div>
+    <h1 id="title"></h1>
+    <div class="sub" id="sub"></div>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section id="cal-sec" hidden><h2 data-i18n="calendar"></h2>
+    <div class="card cal"><div class="cal-head" id="cal-head"></div><div class="cal-grid" id="cal-grid"></div></div>
+  </section>
+
+  <div class="grid">
+    <div>
+      <section id="urgent-sec"><h2 data-i18n="urgent"></h2><div class="urgent" id="urgent"></div></section>
+      <section><h2 data-i18n="deadlines"></h2><div class="card" id="timeline"></div></section>
+    </div>
+    <div>
+      <section id="plan-sec" hidden><h2 data-i18n="plan"></h2><ol class="card plan" id="plan"></ol></section>
+      <section><h2 data-i18n="announcements"></h2><div class="card" id="announcements"></div></section>
+      <section id="grades-sec" hidden><h2 data-i18n="grades"></h2><div class="card" id="grades"></div></section>
+      <section id="courses-sec" hidden><h2 data-i18n="courses"></h2><div class="card courses" id="courses"></div></section>
+      <div class="notes" id="notes"></div>
+    </div>
+  </div>
+  <footer id="footer"></footer>
+</div>
+
+<script type="application/json" id="data">__DASHBOARD_DATA__</script>
+<script>
+(function () {
+  var data = {};
+  try { data = JSON.parse(document.getElementById("data").textContent); } catch (e) { data = {}; }
+
+  var I18N = {
+    en: { urgent: "🔴 Urgent", deadlines: "📅 Deadlines", announcements: "📣 Announcements", grades: "🎓 Grades",
+          courses: "📚 Courses", calendar: "🗓 Calendar", plan: "🧭 Plan",
+          days: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], calm: "Nothing urgent ✨", noDeadlines: "No deadlines in this period.",
+          noAnn: "No new announcements.", kUrgent: "urgent", kDeadlines: "deadlines", kAnn: "announcements",
+          kDone: "submitted", updated: "updated", footer: "Built from Moodle · read-only", theme: "◐ Theme",
+          title: "Studies",
+          s: { done: "✅ submitted", graded: "✅ graded", draft: "📝 draft", todo: "❌ not submitted",
+               overdue: "⏰ overdue", reopened: "↩️ resubmit", unknown: "?" } },
+    ru: { urgent: "🔴 Срочно", deadlines: "📅 Дедлайны", announcements: "📣 Объявления", grades: "🎓 Оценки",
+          courses: "📚 Курсы", calendar: "🗓 Календарь", plan: "🧭 План",
+          days: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"], calm: "Срочного нет ✨", noDeadlines: "Дедлайнов на этот период нет.",
+          noAnn: "Новых объявлений нет.", kUrgent: "срочно", kDeadlines: "дедлайнов", kAnn: "объявлений",
+          kDone: "заданий сдано", updated: "обновлено", footer: "Собрано из Moodle · только чтение", theme: "◐ Тема",
+          title: "Учёба",
+          s: { done: "✅ сдано", graded: "✅ оценено", draft: "📝 черновик", todo: "❌ не сдано",
+               overdue: "⏰ просрочено", reopened: "↩️ сдать снова", unknown: "?" } },
+    de: { urgent: "🔴 Dringend", deadlines: "📅 Fristen", announcements: "📣 Ankündigungen", grades: "🎓 Noten",
+          courses: "📚 Kurse", calendar: "🗓 Kalender", plan: "🧭 Plan",
+          days: ["Mo","Di","Mi","Do","Fr","Sa","So"], calm: "Nichts Dringendes ✨", noDeadlines: "Keine Fristen in diesem Zeitraum.",
+          noAnn: "Keine neuen Ankündigungen.", kUrgent: "dringend", kDeadlines: "Fristen", kAnn: "Ankündigungen",
+          kDone: "abgegeben", updated: "aktualisiert", footer: "Aus Moodle erstellt · nur lesend", theme: "◐ Thema",
+          title: "Studium",
+          s: { done: "✅ abgegeben", graded: "✅ bewertet", draft: "📝 Entwurf", todo: "❌ nicht abgegeben",
+               overdue: "⏰ überfällig", reopened: "↩️ erneut abgeben", unknown: "?" } }
+  };
+  var lang = I18N[data.lang] ? data.lang : "en";
+  var T = I18N[lang];
+  document.documentElement.lang = lang;
+  Array.prototype.forEach.call(document.querySelectorAll("[data-i18n]"), function (n) {
+    n.textContent = T[n.getAttribute("data-i18n")];
+  });
+  document.getElementById("theme").textContent = T.theme;
+  document.getElementById("footer").textContent = T.footer;
+
+  // Theme toggle: remembered per browser, never required for rendering.
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem("moodle-dash-theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("moodle-dash-theme", next); } catch (e) {}
+  });
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function link(text, href, cls) {
+    if (!href || !/^https?:\/\//.test(href)) return el("span", cls, text);
+    var a = el("a", cls, text); a.href = href; a.target = "_blank"; a.rel = "noopener";
+    return a;
+  }
+  var STATUS = T.s;
+  function chip(status, label) {
+    var cls = status === "graded" ? "done" : status === "reopened" ? "todo" : status;
+    return el("span", "chip " + (cls || ""), label || STATUS[status] || status || "");
+  }
+
+  document.title = data.title || T.title;
+  document.getElementById("title").textContent = data.title || T.title;
+  if (data.eyebrow) document.getElementById("eyebrow").textContent = data.eyebrow;
+  document.getElementById("sub").textContent = [data.student, data.range, data.generated ? T.updated + " " + data.generated : ""]
+    .filter(Boolean).join(" · ");
+
+  var deadlines = data.deadlines || [], urgent = data.urgent || [], anns = data.announcements || [];
+  var done = deadlines.filter(function (d) { return d.status === "done" || d.status === "graded"; }).length;
+  var assignable = deadlines.filter(function (d) { return d.status && d.status !== "na"; }).length;
+  var kpis = [
+    { n: urgent.length, l: T.kUrgent, c: urgent.length ? "red" : "green" },
+    { n: deadlines.length, l: T.kDeadlines, c: "blue" },
+    { n: anns.length, l: T.kAnn, c: anns.some(function (a) { return a.unread; }) ? "amber" : "" },
+    { n: assignable ? done + "/" + assignable : "—", l: T.kDone, c: "green" }
+  ];
+  var kp = document.getElementById("kpis");
+  kpis.forEach(function (k) {
+    var c = el("div", "kpi " + k.c); c.appendChild(el("div", "n", String(k.n))); c.appendChild(el("div", "l", k.l)); kp.appendChild(c);
+  });
+
+  var u = document.getElementById("urgent");
+  if (!urgent.length) {
+    var calm = el("div", "card calm", T.calm);
+    u.appendChild(calm);
+  }
+  urgent.forEach(function (x) {
+    var a = el("div", "alert" + (x.level === "amber" ? " amber" : ""));
+    a.appendChild(el("div", "bar"));
+    var b = el("div");
+    b.appendChild(link(x.title, x.url, "t"));
+    b.appendChild(el("div", "m", [x.course, x.when, x.rel].filter(Boolean).join(" · ")));
+    if (x.note) b.appendChild(el("div", "note", x.note));
+    a.appendChild(b); u.appendChild(a);
+  });
+
+  var tl = document.getElementById("timeline");
+  if (!deadlines.length) tl.appendChild(el("div", "empty", T.noDeadlines));
+  var byDay = [];
+  deadlines.forEach(function (d) {
+    var last = byDay[byDay.length - 1];
+    if (!last || last.day !== d.day) byDay.push(last = { day: d.day, rel: d.rel, items: [] });
+    last.items.push(d);
+  });
+  byDay.forEach(function (g) {
+    var day = el("div", "day");
+    var h = el("div", "day-h"); h.appendChild(el("span", "d", g.day)); h.appendChild(el("span", "r", g.rel || ""));
+    day.appendChild(h);
+    g.items.forEach(function (d) {
+      var it = el("div", "item");
+      it.appendChild(el("span", "time", d.time || ""));
+      var mid = el("div");
+      var t = el("div"); t.appendChild(link(d.title, d.url, "title")); if (d.kind) t.appendChild(el("span", "kind", d.kind));
+      mid.appendChild(t); mid.appendChild(el("div", "course", d.course || ""));
+      it.appendChild(mid);
+      it.appendChild(d.status && d.status !== "na" ? chip(d.status) : el("span"));
+      day.appendChild(it);
+    });
+    tl.appendChild(day);
+  });
+
+
+  // Calendar: whole weeks (Mon–Sun) covering today and every dated deadline, at most 6 weeks.
+  function parseDay(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : null;
+  }
+  function iso(d) { return d.toISOString().slice(0, 10); }
+  var today = parseDay(data.today);
+  var dated = deadlines.filter(function (d) { return parseDay(d.date); });
+  if (today || dated.length) {
+    var times = dated.map(function (d) { return parseDay(d.date).getTime(); });
+    if (today) times.push(today.getTime(), today.getTime() + 13 * 864e5);
+    var start = new Date(Math.min.apply(null, times)), end = new Date(Math.max.apply(null, times));
+    start = new Date(start.getTime() - ((start.getUTCDay() + 6) % 7) * 864e5);
+    end = new Date(end.getTime() + (6 - (end.getUTCDay() + 6) % 7) * 864e5);
+    if ((end - start) / 864e5 > 41) end = new Date(start.getTime() + 41 * 864e5);
+    document.getElementById("cal-sec").hidden = false;
+    var head = document.getElementById("cal-head");
+    T.days.forEach(function (n) { head.appendChild(el("div", "", n)); });
+    var grid = document.getElementById("cal-grid");
+    var annDays = {};
+    anns.forEach(function (a) { if (parseDay(a.date)) annDays[a.date] = (annDays[a.date] || []).concat(a); });
+    for (var d = start; d <= end; d = new Date(d.getTime() + 864e5)) {
+      var key = iso(d);
+      var cell = el("div", "cell" + (today && key === iso(today) ? " today" : "") +
+        (today && d < today ? " past" : ""));
+      cell.appendChild(el("div", "num", d.getUTCDate() + (d.getUTCDate() === 1 ? "." + (d.getUTCMonth() + 1) : "")));
+      dated.forEach(function (x) {
+        if (x.date !== key) return;
+        var e = link((x.time ? x.time + " " : "") + x.title, x.url, "ev " + (x.status || "na"));
+        e.title = [x.title, x.course, x.time].filter(Boolean).join(" · ");
+        cell.appendChild(e);
+      });
+      (annDays[key] || []).forEach(function (a) {
+        var e = link("📣 " + a.title, a.url, "ev ann"); e.title = a.title; cell.appendChild(e);
+      });
+      grid.appendChild(cell);
+    }
+  }
+
+  var plan = data.plan || [];
+  if (plan.length) {
+    document.getElementById("plan-sec").hidden = false;
+    var pl = document.getElementById("plan");
+    plan.forEach(function (p) { pl.appendChild(el("li", "", p)); });
+  }
+
+  var an = document.getElementById("announcements");
+  if (!anns.length) an.appendChild(el("div", "empty", T.noAnn));
+  anns.forEach(function (a) {
+    var c = el("div", "ann");
+    var h = el("div", "h");
+    var left = el("div");
+    if (a.unread) left.appendChild(el("span", "dot"));
+    left.appendChild(link(a.title, a.url, "t"));
+    h.appendChild(left); h.appendChild(el("span", "meta", [a.when, a.rel].filter(Boolean).join(" · ")));
+    c.appendChild(h);
+    c.appendChild(el("div", "course", a.course || ""));
+    if (a.summary) c.appendChild(el("p", "s", a.summary));
+    if (a.quote) c.appendChild(el("blockquote", "", "«" + a.quote + "»"));
+    an.appendChild(c);
+  });
+
+  var grades = data.grades || [];
+  if (grades.length) {
+    document.getElementById("grades-sec").hidden = false;
+    var gr = document.getElementById("grades");
+    grades.forEach(function (g) {
+      var c = el("div", "grade");
+      var h = el("div", "h"); h.appendChild(link(g.item, g.url)); h.appendChild(el("span", "v", g.grade || "—"));
+      c.appendChild(h);
+      c.appendChild(el("div", "c", g.course || ""));
+      if (typeof g.percent === "number") {
+        var m = el("div", "meter"), i = el("i"); i.style.width = Math.max(0, Math.min(100, g.percent)) + "%";
+        m.appendChild(i); c.appendChild(m);
+      }
+      gr.appendChild(c);
+    });
+  }
+
+  var courses = data.courses || [];
+  if (courses.length) {
+    document.getElementById("courses-sec").hidden = false;
+    var cs = document.getElementById("courses");
+    courses.forEach(function (c) { cs.appendChild(link(c.name, c.url)); });
+  }
+
+  var notes = document.getElementById("notes");
+  (data.notes || []).forEach(function (n) { notes.appendChild(el("div", "", n)); });
+  if (data.footer) document.getElementById("footer").textContent = data.footer;
+})();
+</script>
+</body>
+</html>

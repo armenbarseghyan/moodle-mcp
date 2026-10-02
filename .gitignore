@@ -8,3 +8,8 @@ docs/site-info.json
 /moodle-mcp
 *.test
 coverage.out
+
+# local previews
+.preview/
+# skill eval runs
+skills-workspace/

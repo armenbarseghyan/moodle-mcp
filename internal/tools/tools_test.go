@@ -28,78 +28,10 @@ var update = flag.Bool("update", false, "rewrite golden files")
 // now is the fixed clock of every scenario: Friday 2026-10-02 12:00 Vienna.
 var now = time.Date(2026, 10, 2, 12, 0, 0, 0, textfmt.Vienna)
 
-// fakeMoodle serves the fixtures as a consistent little world:
-// courses 12308 (PDP), 12326 (Unix/LaTeX), 12307 (ML, empty).
+// fakeMoodle serves the shared fixture world (see moodletest.World).
 func fakeMoodle(t *testing.T, extra ...moodletest.Option) *moodletest.Server {
 	t.Helper()
-	statusByAssign := map[string]string{
-		"501": "synthetic-submitted", "502": "synthetic-draft",
-		"503": "synthetic-new", "505": "synthetic-new", "506": "synthetic-new",
-	}
-	opts := []moodletest.Option{
-		moodletest.RewriteHost("https://moodle.fh-joanneum.at"),
-		moodletest.Files(sampleFiles(t)),
-		moodletest.Fixture("core_webservice_get_site_info", "real"),
-		moodletest.Fixture("core_enrol_get_users_courses", "real"),
-		moodletest.Route("core_course_get_contents", func(p url.Values) moodletest.Resp {
-			switch p.Get("courseid") {
-			case "12308":
-				return moodletest.File(t, "core_course_get_contents", "real-12308")
-			case "12326":
-				return moodletest.File(t, "core_course_get_contents", "real-12326-subsections")
-			}
-			return moodletest.Raw(200, "[]")
-		}),
-		moodletest.Fixture("core_calendar_get_action_events_by_timesort", "synthetic"),
-		moodletest.Fixture("mod_assign_get_assignments", "synthetic"),
-		moodletest.Route("mod_assign_get_submission_status", func(p url.Values) moodletest.Resp {
-			if sc, ok := statusByAssign[p.Get("assignid")]; ok {
-				return moodletest.File(t, "mod_assign_get_submission_status", sc)
-			}
-			return moodletest.ErrorFile(t, "requireloginerror")
-		}),
-		moodletest.Route("gradereport_user_get_grade_items", func(p url.Values) moodletest.Resp {
-			if p.Get("courseid") == "12308" {
-				return moodletest.File(t, "gradereport_user_get_grade_items", "synthetic")
-			}
-			return moodletest.File(t, "gradereport_user_get_grade_items", "real-empty")
-		}),
-		moodletest.Fixture("mod_forum_get_forums_by_courses", "real"),
-		moodletest.Route("mod_forum_get_forum_discussions", func(p url.Values) moodletest.Resp {
-			if p.Get("forumid") == "21334" {
-				return moodletest.File(t, "mod_forum_get_forum_discussions", "synthetic")
-			}
-			return moodletest.File(t, "mod_forum_get_forum_discussions", "real-empty")
-		}),
-	}
-	return moodletest.New(t, append(opts, extra...)...)
-}
-
-// sampleFiles serves synthetic files for every pluginfile URL: PDFs get a
-// two-page sample, zips an instructions archive, everything else 404.
-func sampleFiles(t *testing.T) http.Handler {
-	read := func(name string) []byte {
-		b, err := os.ReadFile(filepath.Join(moodletest.TestdataDir(), "files", name))
-		if err != nil {
-			t.Fatal(err)
-		}
-		return b
-	}
-	pdf, zip := read("sample-two-pages.pdf"), read("sample-instructions.zip")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("token") != moodletest.Token {
-			http.Error(w, `{"error":"x","errorcode":"invalidtoken"}`, http.StatusForbidden)
-			return
-		}
-		switch strings.ToLower(filepath.Ext(r.URL.Path)) {
-		case ".pdf":
-			_, _ = w.Write(pdf)
-		case ".zip":
-			_, _ = w.Write(zip)
-		default:
-			http.NotFound(w, r)
-		}
-	})
+	return moodletest.New(t, moodletest.World(t, extra...)...)
 }
 
 type env struct {

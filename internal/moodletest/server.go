@@ -16,9 +16,17 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"testing"
 	"time"
 )
+
+// Reporter receives problems found by the fake server. *testing.T and
+// *testing.B satisfy it; dev tools can pass a logging implementation.
+type Reporter interface {
+	Helper()
+	Errorf(format string, args ...any)
+	Fatalf(format string, args ...any)
+	Cleanup(func())
+}
 
 // Token is the only token the fake server accepts. Any other token gets the
 // real invalidtoken fixture back, like the real site would answer.
@@ -49,7 +57,7 @@ type Request struct {
 // Server is a fake Moodle site.
 type Server struct {
 	*httptest.Server
-	t testing.TB
+	t Reporter
 
 	mu       sync.Mutex
 	routes   map[string]Handler
@@ -65,7 +73,7 @@ type Server struct {
 type Option func(*Server)
 
 // New starts a fake Moodle and registers cleanup.
-func New(t testing.TB, opts ...Option) *Server {
+func New(t Reporter, opts ...Option) *Server {
 	t.Helper()
 	s := &Server{t: t, routes: map[string]Handler{}, calls: map[string]int{}}
 	for _, o := range opts {
@@ -117,13 +125,13 @@ func Files(h http.Handler) Option {
 }
 
 // File loads testdata/moodle/<fn>.<scenario>.json as a 200 response.
-func File(t testing.TB, fn, scenario string) Resp {
+func File(t Reporter, fn, scenario string) Resp {
 	t.Helper()
 	return Resp{Body: read(t, filepath.Join("moodle", fn+"."+scenario+".json"))}
 }
 
 // ErrorFile loads testdata/errors/<code>.json as a 200 response (as Moodle does).
-func ErrorFile(t testing.TB, code string) Resp {
+func ErrorFile(t Reporter, code string) Resp {
 	t.Helper()
 	return Resp{Body: read(t, filepath.Join("errors", code+".json"))}
 }
@@ -260,7 +268,7 @@ func TestdataDir() string {
 	return filepath.Join(filepath.Dir(file), "..", "..", "testdata")
 }
 
-func read(t testing.TB, rel string) []byte {
+func read(t Reporter, rel string) []byte {
 	t.Helper()
 	b, err := os.ReadFile(filepath.Join(TestdataDir(), rel))
 	if err != nil {
