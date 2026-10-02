@@ -1,0 +1,68 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 259 >>
+stream
+BT /F1 9 Tf 72 700 Td (Test 30) Tj ET
+q BT /F2 9 Tf 300 700 Td <057F> Tj ET Q
+q BT 312 700 Td (Yes) Tj ET Q
+q BT /F2 9 Tf 340 700 Td <0581> Tj ET Q
+q BT 352 700 Td (No) Tj ET Q
+BT 72 680 Td (Labs & Homework 30) Tj ET
+Q
+BT 72 660 Td (Capstone Project 30) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type0 /BaseFont /Checkbox /Encoding /Identity-H /DescendantFonts [7 0 R] /ToUnicode 8 0 R >>
+endobj
+7 0 obj
+<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Checkbox /CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /DW 1000 >>
+endobj
+8 0 obj
+<< /Length 252 >>
+stream
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CMapName /Checkbox def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+2 beginbfchar
+<057F> <2610>
+<0581> <2612>
+endbfchar
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000561 00000 n 
+0000000658 00000 n 
+0000000791 00000 n 
+0000000950 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1253
+%%EOF

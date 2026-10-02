@@ -32,6 +32,8 @@ linters:
       disabled-checks:
         - ifElseChain
   exclusions:
+    paths:
+      - third_party
     rules:
       - path: _test\.go
         linters: [gosec, noctx, bodyclose]
@@ -39,3 +41,6 @@ linters:
 formatters:
   enable:
     - gofmt
+  exclusions:
+    paths:
+      - third_party

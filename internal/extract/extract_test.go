@@ -189,3 +189,19 @@ func TestClean(t *testing.T) {
 		}
 	}
 }
+
+// Word-exported tables draw ☐/☒ in a CID font inside q…Q blocks; the rows
+// after them used to vanish (fixed in third_party/ledongthuc-pdf, see PATCHES.md).
+func TestPDFTableWithCheckboxes(t *testing.T) {
+	t.Parallel()
+	parts, err := extract.Text("syllabus.pdf", readFile(t, "sample-table-checkbox.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := joined(parts)
+	for _, want := range []string{"Test 30", "☐", "Yes", "☒", "No", "Labs & Homework 30", "Capstone Project 30"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+}
