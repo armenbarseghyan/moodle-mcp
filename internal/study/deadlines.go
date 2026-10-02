@@ -104,30 +104,44 @@ func (s *Service) Deadlines(ctx context.Context, days int, includeOverdue, refre
 		return d.Due.Before(lookbackStart) || !d.Due.Before(res.Until)
 	})
 
-	// Submission state for every assignment candidate.
-	var assignIdx []int
+	// Submission state for every assignment and quiz candidate.
+	type state struct {
+		status Submission
+		ext    time.Time
+		at     time.Time
+	}
+	var idx []int
 	for i, d := range candidates {
-		if d.Key.Module == "assign" {
-			assignIdx = append(assignIdx, i)
+		if d.Key.Module == "assign" || d.Key.Module == "quiz" {
+			idx = append(idx, i)
 		}
 	}
-	statuses, errs, err := fanOut(ctx, assignIdx, func(ctx context.Context, i int) (Fetched[*moodle.SubmissionStatus], error) {
-		return s.src.SubmissionStatus(ctx, candidates[i].Key.Instance, refresh)
+	states, errs, err := fanOut(ctx, idx, func(ctx context.Context, i int) (state, error) {
+		d := candidates[i]
+		if d.Key.Module == "quiz" {
+			f, err := s.src.QuizAttempts(ctx, d.Key.Instance, refresh)
+			return state{status: QuizState(f.Value), at: f.At}, err
+		}
+		f, err := s.src.SubmissionStatus(ctx, d.Key.Instance, refresh)
+		if err != nil {
+			return state{}, err
+		}
+		st, ext := SubmissionState(f.Value)
+		return state{status: st, ext: ext, at: f.At}, nil
 	})
 	if err != nil {
 		return res, err
 	}
-	for j, i := range assignIdx {
+	for j, i := range idx {
 		if errs[j] != nil {
 			candidates[i].Status = SubmissionUnknown
-			s.log.Warn("submission status", "assign", candidates[i].Key.Instance, "err", errs[j])
+			s.log.Warn("submission status", "module", candidates[i].Key.Module, "instance", candidates[i].Key.Instance, "err", errs[j])
 			continue
 		}
-		stamp.add(statuses[j].At)
-		st, ext := SubmissionState(statuses[j].Value)
-		candidates[i].Status = st
-		if !ext.IsZero() {
-			candidates[i].Due = ext // an extension overrides every other date
+		stamp.add(states[j].at)
+		candidates[i].Status = states[j].status
+		if !states[j].ext.IsZero() {
+			candidates[i].Due = states[j].ext // an extension overrides every other date
 		}
 	}
 
@@ -219,7 +233,7 @@ func MergeDeadlines(events []moodle.Event, courses []moodle.CourseAssignments, r
 			courseID, courseName = e.Course.ID, e.Course.FullName
 		}
 		status := SubmissionNotApplicable
-		if e.ModuleName == "assign" {
+		if e.ModuleName == "assign" || e.ModuleName == "quiz" {
 			status = SubmissionUnknown
 		}
 		add(&Deadline{
@@ -251,6 +265,22 @@ func sortDeadlines(ds []Deadline) {
 		}
 		return strings.Compare(a.Title, b.Title)
 	})
+}
+
+// QuizState maps the user's quiz attempts to a Submission: a finished attempt
+// counts as done, an open one (in progress, or overdue and still to be
+// submitted) as in progress; no attempts or only abandoned ones as not done.
+func QuizState(attempts []moodle.QuizAttempt) Submission {
+	st := SubmissionNotSubmitted
+	for _, a := range attempts {
+		switch a.State {
+		case moodle.QuizFinished:
+			return SubmissionSubmitted
+		case moodle.QuizInProgress, moodle.QuizOverdue:
+			st = SubmissionInProgress
+		}
+	}
+	return st
 }
 
 // SubmissionState maps mod_assign_get_submission_status to a Submission and

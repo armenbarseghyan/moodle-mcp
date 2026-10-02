@@ -137,6 +137,17 @@ func (c *Client) Discussions(ctx context.Context, forumID, perPage int) ([]Discu
 	return out.Discussions, nil
 }
 
+// QuizAttempts returns all of the current user's attempts at a quiz
+// (finished and unfinished; previews excluded).
+func (c *Client) QuizAttempts(ctx context.Context, quizID int) ([]QuizAttempt, error) {
+	var out quizAttemptsResponse
+	p := url.Values{"quizid": {strconv.Itoa(quizID)}, "status": {"all"}}
+	if err := c.Call(ctx, "mod_quiz_get_user_attempts", p, &out); err != nil {
+		return nil, err
+	}
+	return out.Attempts, nil
+}
+
 // intList encodes ids as name[0]=…&name[1]=… (PHP array syntax).
 func intList(name string, ids []int) url.Values {
 	v := url.Values{}

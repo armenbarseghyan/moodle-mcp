@@ -3,7 +3,7 @@
 A read-only MCP server for Moodle (FH JOANNEUM, Moodle 4.5), written in Go. It answers study
 questions — what is due, what teachers posted, where a piece of material is — by combining
 several Moodle Web Service calls behind each tool. It cannot change anything in Moodle: the
-client refuses every function outside an allowlist of 9 getters.
+client refuses every function outside an allowlist of 10 getters.
 
 Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Setting it up as a student (token, build, Claude Code / Claude Desktop): [docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md).
@@ -65,7 +65,7 @@ claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "
 
 | Tool | Parameters | What it does |
 |---|---|---|
-| `moodle_deadlines` | `days=14`, `include_overdue=true`, `refresh` | Deadlines until the end of day N (Vienna): calendar + assignment due dates, deduplicated, submission status for every assignment, unsubmitted ones overdue by up to 7 days |
+| `moodle_deadlines` | `days=14`, `include_overdue=true`, `refresh` | Deadlines until the end of day N (Vienna): calendar + assignment due dates, deduplicated, submission status for every assignment and attempt status for every quiz, unsubmitted assignments overdue by up to 7 days |
 | `moodle_announcements` | `days=7`, `refresh` | Recent posts in the announcement forums of all courses |
 | `moodle_courses` | `include_past`, `refresh` | Active courses: id, name, dates, progress |
 | `moodle_course_contents` | `course`, `refresh` | A course's material by section (incl. Moodle 4.5 subsections) with file links. `course` is an id or part of the name; ambiguous queries return candidates |
@@ -106,6 +106,7 @@ make test      # go test -race ./...
 make cover     # coverage
 make lint      # go vet + golangci-lint v2 (via go run, nothing to install)
 make golden    # rewrite the expected tool output (testdata/golden)
+make fuzz      # all fuzz targets, FUZZTIME=30s each (PDF/zip/HTML parsing, responses, links, search)
 make dev       # bin/fakemoodle (fake Moodle) and bin/mcpcall (call a tool from the shell)
 ```
 

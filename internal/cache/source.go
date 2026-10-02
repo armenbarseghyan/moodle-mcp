@@ -35,6 +35,7 @@ type Source struct {
 	events      *TTL[[]moodle.Event]
 	assignments *TTL[study.Assignments]
 	status      *TTL[*moodle.SubmissionStatus]
+	quiz        *TTL[[]moodle.QuizAttempt]
 	forums      *TTL[[]moodle.Forum]
 	discussions *TTL[[]moodle.Discussion]
 	texts       *TTL[[]extract.Part]
@@ -56,6 +57,7 @@ func NewSource(c *moodle.Client, now func() time.Time) *Source {
 		events:      New[[]moodle.Event](DeadlinesTTL, now),
 		assignments: New[study.Assignments](DeadlinesTTL, now),
 		status:      New[*moodle.SubmissionStatus](DeadlinesTTL, now),
+		quiz:        New[[]moodle.QuizAttempt](DeadlinesTTL, now),
 		forums:      New[[]moodle.Forum](ForumsTTL, now),
 		discussions: New[[]moodle.Discussion](NewsTTL, now),
 		texts:       New[[]extract.Part](forever, now), // keyed by URL+size+mtime
@@ -99,6 +101,11 @@ func (s *Source) SubmissionStatus(ctx context.Context, assignID int, refresh boo
 		func(ctx context.Context) (*moodle.SubmissionStatus, error) {
 			return s.c.SubmissionStatus(ctx, assignID)
 		}))
+}
+
+func (s *Source) QuizAttempts(ctx context.Context, quizID int, refresh bool) (study.Fetched[[]moodle.QuizAttempt], error) {
+	return fetched(s.quiz.Get(ctx, "quiz:"+strconv.Itoa(quizID), refresh,
+		func(ctx context.Context) ([]moodle.QuizAttempt, error) { return s.c.QuizAttempts(ctx, quizID) }))
 }
 
 func (s *Source) Forums(ctx context.Context, courseIDs []int, refresh bool) (study.Fetched[[]moodle.Forum], error) {

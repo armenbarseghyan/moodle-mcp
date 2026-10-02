@@ -1,0 +1,41 @@
+{
+  "attempts": [
+    {
+      "id": 8001,
+      "quiz": 77,
+      "userid": 4242,
+      "attempt": 1,
+      "uniqueid": 9001,
+      "layout": "1,2,0",
+      "currentpage": 0,
+      "preview": 0,
+      "state": "abandoned",
+      "timestart": 1790800000,
+      "timefinish": 0,
+      "timemodified": 1790800000,
+      "timemodifiedoffline": 0,
+      "timecheckstate": null,
+      "sumgrades": null,
+      "gradeitemmarks": []
+    },
+    {
+      "id": 8002,
+      "quiz": 77,
+      "userid": 4242,
+      "attempt": 2,
+      "uniqueid": 9002,
+      "layout": "1,2,0",
+      "currentpage": 0,
+      "preview": 0,
+      "state": "finished",
+      "timestart": 1790900000,
+      "timefinish": 1790901800,
+      "timemodified": 1790901800,
+      "timemodifiedoffline": 0,
+      "timecheckstate": null,
+      "sumgrades": 8.5,
+      "gradeitemmarks": []
+    }
+  ],
+  "warnings": []
+}

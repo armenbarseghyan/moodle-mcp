@@ -36,6 +36,7 @@ type Source interface {
 	Events(ctx context.Context, from, to time.Time, refresh bool) (Fetched[[]moodle.Event], error)
 	Assignments(ctx context.Context, courseIDs []int, refresh bool) (Fetched[Assignments], error)
 	SubmissionStatus(ctx context.Context, assignID int, refresh bool) (Fetched[*moodle.SubmissionStatus], error)
+	QuizAttempts(ctx context.Context, quizID int, refresh bool) (Fetched[[]moodle.QuizAttempt], error)
 	Forums(ctx context.Context, courseIDs []int, refresh bool) (Fetched[[]moodle.Forum], error)
 	Discussions(ctx context.Context, forumID int, refresh bool) (Fetched[[]moodle.Discussion], error)
 	// GradeItems is never cached.

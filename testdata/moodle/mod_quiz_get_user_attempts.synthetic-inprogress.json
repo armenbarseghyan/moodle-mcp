@@ -1,0 +1,23 @@
+{
+  "attempts": [
+    {
+      "id": 8001,
+      "quiz": 77,
+      "userid": 4242,
+      "attempt": 1,
+      "uniqueid": 9001,
+      "layout": "1,2,0",
+      "currentpage": 0,
+      "preview": 0,
+      "state": "inprogress",
+      "timestart": 1790900000,
+      "timefinish": 0,
+      "timemodified": 1790900000,
+      "timemodifiedoffline": 0,
+      "timecheckstate": null,
+      "sumgrades": null,
+      "gradeitemmarks": []
+    }
+  ],
+  "warnings": []
+}

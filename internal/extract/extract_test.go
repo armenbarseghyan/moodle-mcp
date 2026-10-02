@@ -14,6 +14,15 @@ import (
 	"moodle-mcp/internal/moodletest"
 )
 
+func readFileF(f *testing.F, name string) []byte {
+	f.Helper()
+	b, err := os.ReadFile(filepath.Join(moodletest.TestdataDir(), "files", name))
+	if err != nil {
+		f.Fatal(err)
+	}
+	return b
+}
+
 func readFile(t *testing.T, name string) []byte {
 	t.Helper()
 	b, err := os.ReadFile(filepath.Join(moodletest.TestdataDir(), "files", name))
@@ -200,6 +209,23 @@ func TestPDFTableWithCheckboxes(t *testing.T) {
 	}
 	got := joined(parts)
 	for _, want := range []string{"Test 30", "☐", "Yes", "☒", "No", "Labs & Homework 30", "Capstone Project 30"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %q in %q", want, got)
+		}
+	}
+}
+
+// Word draws every word of a table cell with its own TJ operator; a row must
+// still come out as one line ("Written Exam (practical) 70"), not one word
+// per line.
+func TestPDFRowOfSeparateTJs(t *testing.T) {
+	t.Parallel()
+	parts, err := extract.Text("syllabus.pdf", readFile(t, "sample-table-word-per-tj.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := joined(parts)
+	for _, want := range []string{"Written Exam (practical) 70\n", "Homework 30"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in %q", want, got)
 		}

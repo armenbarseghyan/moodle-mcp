@@ -444,3 +444,18 @@ in `Normalize` failed under parallel calls; it is now created per call.
 6. Go: `GOTOOLCHAIN=auto` (go-sdk v1.8 requires 1.25).
 7. Output is English by default. Other languages are planned via the message catalog
    (`textfmt.SetLanguage` + translations of the English keys), with no changes to output code.
+
+## 14. Later additions
+
+- **Quiz status.** `mod_quiz_get_user_attempts` (status `all`) is on the allowlist; deadlines
+  show quizzes as not attempted / attempt in progress / finished (`study.QuizState`: a finished
+  attempt wins, an `inprogress` or `overdue` one means in progress, none or only `abandoned`
+  means not attempted). Cached like submission status (5 min).
+- **PDF lines.** `ledongthuc/pdf` emits a `"\n"` pseudo-glyph after every `TJ`; Word draws each
+  table-cell word with its own `TJ`, so rows came out one word per line. `extract` skips the
+  pseudo-glyph and breaks lines only on coordinates. Word recall vs poppler's `pdftotext` on
+  the 8 course syllabi: 100 % (7) and 99.9 % (1).
+- **Fuzzing.** `make fuzz` runs six targets: HTML stripping and truncation, every file
+  extractor (no panic, valid UTF-8), response decoding (errors never contain the token),
+  pluginfile URL validation (an accepted URL always targets the configured site, never keeps a
+  token, no traversal) and search input. Millions of executions per target without findings.

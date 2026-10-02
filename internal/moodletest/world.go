@@ -53,6 +53,12 @@ func World(r Reporter, extra ...Option) []Option {
 			}
 			return File(r, "gradereport_user_get_grade_items", "real-empty")
 		}),
+		Route("mod_quiz_get_user_attempts", func(p url.Values) Resp {
+			if p.Get("quizid") == "77" {
+				return File(r, "mod_quiz_get_user_attempts", "synthetic-none")
+			}
+			return ErrorFile(r, "requireloginerror")
+		}),
 		Fixture("mod_forum_get_forums_by_courses", "real"),
 		Route("mod_forum_get_forum_discussions", func(p url.Values) Resp {
 			if p.Get("forumid") == "21334" {

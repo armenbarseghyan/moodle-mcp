@@ -264,14 +264,14 @@ func TestMergeDeadlines(t *testing.T) {
 			name:   "quiz from calendar only uses activity name",
 			events: []moodle.Event{ev("quiz", 77, "2026-10-05 23:59", 2)},
 			want: []want{{study.DeadlineKey{Module: "quiz", Instance: 77}, "Event quiz", "2026-10-05 23:59",
-				study.FromCalendar, study.SubmissionNotApplicable, "Unix"}},
+				study.FromCalendar, study.SubmissionUnknown, "Unix"}},
 		},
 		{
 			name:    "same instance id in different modules is not merged",
 			events:  []moodle.Event{ev("quiz", 501, "2026-10-05 23:59", 2)},
 			assigns: []moodle.CourseAssignments{{ID: 1, Assignments: []moodle.Assignment{asg(501, 9501, 1, "Homework R1", "2026-10-07 17:15")}}},
 			want: []want{
-				{study.DeadlineKey{Module: "quiz", Instance: 501}, "Event quiz", "2026-10-05 23:59", study.FromCalendar, study.SubmissionNotApplicable, "Unix"},
+				{study.DeadlineKey{Module: "quiz", Instance: 501}, "Event quiz", "2026-10-05 23:59", study.FromCalendar, study.SubmissionUnknown, "Unix"},
 				{study.DeadlineKey{Module: "assign", Instance: 501}, "Homework R1", "2026-10-07 17:15", study.FromAssignments, study.SubmissionUnknown, "Programming"},
 			},
 		},
@@ -288,14 +288,14 @@ func TestMergeDeadlines(t *testing.T) {
 			name:   "unknown course falls back to event course name",
 			events: []moodle.Event{ev("quiz", 5, "2026-10-05 10:00", 99)},
 			want: []want{{study.DeadlineKey{Module: "quiz", Instance: 5}, "Event quiz", "2026-10-05 10:00",
-				study.FromCalendar, study.SubmissionNotApplicable, "Course 99"}},
+				study.FromCalendar, study.SubmissionUnknown, "Course 99"}},
 		},
 		{
 			name:   "sorted by due date",
 			events: []moodle.Event{ev("quiz", 2, "2026-10-09 10:00", 2), ev("quiz", 1, "2026-10-03 10:00", 2)},
 			want: []want{
-				{study.DeadlineKey{Module: "quiz", Instance: 1}, "Event quiz", "2026-10-03 10:00", study.FromCalendar, study.SubmissionNotApplicable, "Unix"},
-				{study.DeadlineKey{Module: "quiz", Instance: 2}, "Event quiz", "2026-10-09 10:00", study.FromCalendar, study.SubmissionNotApplicable, "Unix"},
+				{study.DeadlineKey{Module: "quiz", Instance: 1}, "Event quiz", "2026-10-03 10:00", study.FromCalendar, study.SubmissionUnknown, "Unix"},
+				{study.DeadlineKey{Module: "quiz", Instance: 2}, "Event quiz", "2026-10-09 10:00", study.FromCalendar, study.SubmissionUnknown, "Unix"},
 			},
 		},
 	}
@@ -622,5 +622,42 @@ func TestMatchFile(t *testing.T) {
 		{Label: "3", Text: "x"}, {Label: "4", Text: "x"}, {Label: "5", Text: "x"}}, "x")
 	if len(h.Labels) != 3 || h.More != 2 {
 		t.Errorf("labels capped at 3 with More=2, got %v more=%d", h.Labels, h.More)
+	}
+}
+
+func TestQuizState(t *testing.T) {
+	t.Parallel()
+	a := func(state string) moodle.QuizAttempt { return moodle.QuizAttempt{State: state} }
+	tests := []struct {
+		name string
+		in   []moodle.QuizAttempt
+		want study.Submission
+	}{
+		{"no attempts", nil, study.SubmissionNotSubmitted},
+		{"only abandoned", []moodle.QuizAttempt{a(moodle.QuizAbandoned)}, study.SubmissionNotSubmitted},
+		{"in progress", []moodle.QuizAttempt{a(moodle.QuizInProgress)}, study.SubmissionInProgress},
+		{"time up, not submitted", []moodle.QuizAttempt{a(moodle.QuizOverdue)}, study.SubmissionInProgress},
+		{"finished", []moodle.QuizAttempt{a(moodle.QuizFinished)}, study.SubmissionSubmitted},
+		{"finished after an abandoned one", []moodle.QuizAttempt{a(moodle.QuizAbandoned), a(moodle.QuizFinished)}, study.SubmissionSubmitted},
+		{"finished, then a new open attempt", []moodle.QuizAttempt{a(moodle.QuizFinished), a(moodle.QuizInProgress)}, study.SubmissionSubmitted},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := study.QuizState(tt.in); got != tt.want {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+	for sc, want := range map[string]study.Submission{
+		"synthetic-none": study.SubmissionNotSubmitted, "synthetic-inprogress": study.SubmissionInProgress,
+		"synthetic-finished": study.SubmissionSubmitted,
+	} {
+		resp := loadFixture[struct {
+			Attempts []moodle.QuizAttempt `json:"attempts"`
+		}](t, "mod_quiz_get_user_attempts", sc)
+		if got := study.QuizState(resp.Attempts); got != want {
+			t.Errorf("%s: %v, want %v", sc, got, want)
+		}
 	}
 }

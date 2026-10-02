@@ -18,6 +18,7 @@ var allowed = map[string]struct{}{
 	"gradereport_user_get_grade_items":            {},
 	"mod_forum_get_forums_by_courses":             {},
 	"mod_forum_get_forum_discussions":             {},
+	"mod_quiz_get_user_attempts":                  {},
 }
 
 // Allowed reports whether fn may be called.

@@ -96,13 +96,23 @@ func Deadlines(r study.DeadlinesResult, now time.Time) string {
 
 func deadlineLine(x study.Deadline, now time.Time) string {
 	parts := []string{when(x.Due, now), x.Course.Label, link(x.Title, x.URL), kindLabel(x.Key.Module)}
-	if s := statusLabel(x.Status); s != "" {
+	if s := statusLabel(x.Key.Module, x.Status); s != "" {
 		parts = append(parts, s)
 	}
 	return strings.Join(parts, " · ")
 }
 
-func statusLabel(s study.Submission) string {
+func statusLabel(module string, s study.Submission) string {
+	if module == "quiz" {
+		switch s {
+		case study.SubmissionNotSubmitted:
+			return tr("❌ not attempted")
+		case study.SubmissionInProgress:
+			return tr("⏳ attempt in progress")
+		case study.SubmissionSubmitted:
+			return tr("✅ finished")
+		}
+	}
 	switch s {
 	case study.SubmissionNotSubmitted:
 		return tr("❌ not submitted")
@@ -114,6 +124,8 @@ func statusLabel(s study.Submission) string {
 		return tr("✅ submitted, graded")
 	case study.SubmissionReopened:
 		return tr("↩️ reopened, submit again")
+	case study.SubmissionInProgress:
+		return tr("⏳ in progress")
 	case study.SubmissionUnknown:
 		return tr("status unknown")
 	default:

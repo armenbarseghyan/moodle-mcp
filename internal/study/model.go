@@ -48,6 +48,7 @@ const (
 	SubmissionSubmitted
 	SubmissionGraded
 	SubmissionReopened
+	SubmissionInProgress // quiz attempt started but not submitted
 )
 
 // Done reports whether nothing is left to do for the user.

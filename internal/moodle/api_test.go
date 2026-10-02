@@ -31,6 +31,7 @@ func TestFixturesDecode(t *testing.T) {
 		"gradereport_user_get_grade_items": func(c *moodle.Client) error { _, err := c.GradeItems(ctx, 1, 4242); return err },
 		"mod_forum_get_forums_by_courses":  func(c *moodle.Client) error { _, err := c.Forums(ctx, []int{1}); return err },
 		"mod_forum_get_forum_discussions":  func(c *moodle.Client) error { _, err := c.Discussions(ctx, 1, 10); return err },
+		"mod_quiz_get_user_attempts":       func(c *moodle.Client) error { _, err := c.QuizAttempts(ctx, 77); return err },
 	}
 	for _, fn := range moodle.AllowedFunctions() {
 		call, ok := calls[fn]
@@ -333,5 +334,21 @@ func TestForumsAndDiscussions(t *testing.T) {
 	}
 	if len(ds) != 2 || ds[0].Subject == "" || ds[0].Message == "" || ds[0].Created.Time().IsZero() || ds[0].Discussion != 7001 {
 		t.Errorf("discussions = %+v", ds)
+	}
+}
+
+func TestQuizAttempts(t *testing.T) {
+	t.Parallel()
+	srv := moodletest.New(t, moodletest.Fixture("mod_quiz_get_user_attempts", "synthetic-finished"))
+	atts, err := newClient(t, srv).QuizAttempts(context.Background(), 77)
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := srv.Requests()[0].Form
+	if f.Get("quizid") != "77" || f.Get("status") != "all" {
+		t.Errorf("params = %v (status must be all: unfinished attempts matter)", f)
+	}
+	if len(atts) != 2 || atts[1].State != moodle.QuizFinished || atts[1].SumGrades == nil || atts[1].TimeFinish.Time().IsZero() {
+		t.Errorf("attempts = %+v", atts)
 	}
 }

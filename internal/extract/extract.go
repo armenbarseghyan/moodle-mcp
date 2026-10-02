@@ -180,11 +180,17 @@ func fromPDF(data []byte) ([]Part, error) {
 // the content stream order (which is the reading order in practice). Plain
 // text extraction loses the spaces in many LaTeX-generated PDFs.
 func pdfPageText(p pdf.Page) string {
-	glyphs := p.Content().Text
 	var b strings.Builder
-	for i, g := range glyphs {
-		if i > 0 {
-			prev := glyphs[i-1]
+	var prev *pdf.Text
+	for i := range p.Content().Text {
+		g := &p.Content().Text[i]
+		// The library appends a "\n" pseudo-glyph after every TJ operator, at the
+		// position of the text. Word draws each table-cell word with its own TJ,
+		// so copying it split cells apart; line breaks come from coordinates.
+		if g.S == "\n" {
+			continue
+		}
+		if prev != nil {
 			size := math.Max(math.Max(prev.FontSize, g.FontSize), 1)
 			dy := math.Abs(g.Y - prev.Y)
 			gap := g.X - (prev.X + prev.W)
@@ -196,6 +202,7 @@ func pdfPageText(p pdf.Page) string {
 			}
 		}
 		b.WriteString(g.S)
+		prev = g
 	}
 	return b.String()
 }

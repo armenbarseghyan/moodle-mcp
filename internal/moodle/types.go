@@ -225,6 +225,29 @@ type Discussion struct {
 	NumUnread    int    `json:"numunread"`
 }
 
+// Quiz attempt states as reported by mod_quiz.
+const (
+	QuizInProgress = "inprogress"
+	QuizOverdue    = "overdue" // time is up, the attempt still needs submitting
+	QuizFinished   = "finished"
+	QuizAbandoned  = "abandoned"
+)
+
+// QuizAttempt is an element of mod_quiz_get_user_attempts.
+type QuizAttempt struct {
+	ID         int      `json:"id"`
+	Attempt    int      `json:"attempt"`
+	State      string   `json:"state"`
+	TimeStart  Unix     `json:"timestart"`
+	TimeFinish Unix     `json:"timefinish"`
+	SumGrades  *float64 `json:"sumgrades"`
+}
+
+type quizAttemptsResponse struct {
+	Attempts []QuizAttempt `json:"attempts"`
+	Warnings []Warning     `json:"warnings"`
+}
+
 type discussionsResponse struct {
 	Discussions []Discussion `json:"discussions"`
 	Warnings    []Warning    `json:"warnings"`
