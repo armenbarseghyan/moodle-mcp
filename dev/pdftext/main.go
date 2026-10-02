@@ -14,7 +14,7 @@ import (
 
 func main() {
 	for _, p := range os.Args[1:] {
-		data, err := os.ReadFile(p)
+		data, err := os.ReadFile(p) //nolint:gosec // dev tool: reads the files named on its command line
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			continue
