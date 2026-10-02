@@ -1,0 +1,41 @@
+version: "2"
+
+linters:
+  enable:
+    - bodyclose
+    - errorlint
+    - forbidigo
+    - gocritic
+    - gosec
+    - misspell
+    - nilerr
+    - noctx
+    - unconvert
+    - usestdlibvars
+  settings:
+    forbidigo:
+      forbid:
+        # stdout belongs to the MCP protocol: logs go to stderr via slog.
+        - pattern: ^fmt\.Print(f|ln)?$
+        - pattern: ^print(ln)?$
+    gosec:
+      excludes:
+        - G304 # reading files chosen by the user/tests is the point of the tool
+    errcheck:
+      exclude-functions:
+        # Closing something we only read from cannot lose data.
+        - (io.ReadCloser).Close
+        - (net.Conn).Close
+        - (*github.com/modelcontextprotocol/go-sdk/mcp.ServerSession).Close
+        - (*github.com/modelcontextprotocol/go-sdk/mcp.ClientSession).Close
+    gocritic:
+      disabled-checks:
+        - ifElseChain
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters: [gosec, noctx, bodyclose]
+
+formatters:
+  enable:
+    - gofmt
