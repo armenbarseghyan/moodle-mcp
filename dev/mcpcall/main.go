@@ -38,6 +38,7 @@ func run(list bool, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, bin) //nolint:gosec // dev tool: runs the server binary the developer points it at
+	cmd.Stderr = os.Stderr               // the server's logs (MOODLE_LOG_LEVEL=debug) stay visible
 	cs, err := mcp.NewClient(&mcp.Implementation{Name: "mcpcall"}, nil).Connect(ctx, &mcp.CommandTransport{Command: cmd}, nil)
 	if err != nil {
 		return err

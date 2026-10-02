@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"moodle-mcp/internal/extract"
 	"moodle-mcp/internal/moodletest"
@@ -229,5 +230,52 @@ func TestPDFRowOfSeparateTJs(t *testing.T) {
 		if !strings.Contains(got, want) {
 			t.Errorf("missing %q in %q", want, got)
 		}
+	}
+}
+
+// minimalPDF builds a one-page PDF with a Helvetica font around content.
+func minimalPDF(content string) []byte {
+	objs := []string{
+		"<< /Type /Catalog /Pages 2 0 R >>",
+		"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+		"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+		fmt.Sprintf("<< /Length %d >>\nstream\n%s\nendstream", len(content), content),
+		"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
+	}
+	var b bytes.Buffer
+	b.WriteString("%PDF-1.4\n")
+	offs := make([]int, len(objs))
+	for i, o := range objs {
+		offs[i] = b.Len()
+		fmt.Fprintf(&b, "%d 0 obj\n%s\nendobj\n", i+1, o)
+	}
+	xref := b.Len()
+	fmt.Fprintf(&b, "xref\n0 %d\n0000000000 65535 f \n", len(objs)+1)
+	for _, o := range offs {
+		fmt.Fprintf(&b, "%010d 00000 n \n", o)
+	}
+	fmt.Fprintf(&b, "trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n", len(objs)+1, xref)
+	return b.Bytes()
+}
+
+// A dense page must be parsed once, not once per glyph: the quadratic version
+// took minutes on a 31-page course PDF and hung moodle_search(in_files=true).
+func TestPDFDensePageIsLinear(t *testing.T) {
+	t.Parallel()
+	var c strings.Builder
+	for i := range 1000 { // 1000 TJ runs of 6 glyphs
+		fmt.Fprintf(&c, "BT /F1 9 Tf 1 0 0 1 %d %d Tm [(word%02d)] TJ ET\n", 72+(i%10)*50, 700-(i/10)*6, i%100)
+	}
+	data := minimalPDF(c.String())
+	start := time.Now()
+	parts, err := extract.Text("dense.pdf", data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d := time.Since(start); d > 2*time.Second {
+		t.Fatalf("extracting one dense page took %v; the page is probably parsed per glyph", d)
+	}
+	if len(parts) != 1 || !strings.Contains(parts[0].Text, "word99") {
+		t.Fatalf("unexpected text: %+v", parts)
 	}
 }
