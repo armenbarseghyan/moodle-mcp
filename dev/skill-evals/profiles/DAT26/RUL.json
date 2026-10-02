@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "programme": "DAT26",
+  "code": "RUL",
+  "name": "Refresher on Unix Shells and LaTeX",
+  "moodle_course_id": 12326,
+  "semester": 1,
+  "ects": 2.5,
+  "continuous_assessment": false,
+  "lecturers": [
+    "Erika Mustermann"
+  ],
+  "source": {
+    "file": "Syllabus_DAT26_RUL.pdf",
+    "url": "https://moodle.fh-joanneum.at/pluginfile.php/317987/mod_resource/content/3/Syllabus_DAT26_RUL.pdf",
+    "read_at": "2026-10-03"
+  },
+  "assessment": {
+    "first_attempt": [
+      {
+        "name": "Homework",
+        "weight": 20,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "Exam Part 1 – Quiz",
+        "weight": 40,
+        "must_pass": false,
+        "kind": "exam"
+      },
+      {
+        "name": "Exam Part 2 – Practical",
+        "weight": 40,
+        "must_pass": false,
+        "kind": "exam"
+      }
+    ],
+    "retake": [
+      {
+        "name": "Homework",
+        "weight": 20,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "Exam Part 1 – Quiz",
+        "weight": 40,
+        "must_pass": false,
+        "kind": "exam"
+      },
+      {
+        "name": "Exam Part 2 – Practical",
+        "weight": 40,
+        "must_pass": false,
+        "kind": "exam"
+      }
+    ],
+    "pass_rules": [],
+    "notes": [
+      "Lecturer may add tasks or an oral exam in special cases (e.g. narrow fails, suspicious submissions)."
+    ]
+  },
+  "ai_policy": {
+    "level": "allowed_except_assessments",
+    "summary": "No AI in written assessments; for presentations AI output must be critically evaluated and explainable.",
+    "quote": "AI use is not permitted for written assessments. If AI is used to support the preparation of presentations, students must critically evaluate all AI-generated content."
+  },
+  "attendance": {
+    "min_percent": 75,
+    "online_camera": true
+  },
+  "exemption_exam": {
+    "available": true,
+    "register_via": "Joanneum Online",
+    "when": "at the beginning of the course"
+  },
+  "tools": [
+    "Unix shell",
+    "LaTeX",
+    "KOMA-Script"
+  ],
+  "topics": [
+    "Text-based shells",
+    "File systems and permissions",
+    "Processes and jobs",
+    "Shell scripting",
+    "Pipes and regular expressions",
+    "Editors",
+    "LaTeX documents, classes, page styles, formulas"
+  ],
+  "verified": false
+}

@@ -1,0 +1,121 @@
+{
+  "schema": 1,
+  "programme": "DAT26",
+  "code": "QML",
+  "name": "Quick Guide to Machine Learning",
+  "moodle_course_id": 12307,
+  "semester": 1,
+  "ects": 2.5,
+  "continuous_assessment": true,
+  "lecturers": [
+    "Erika Mustermann"
+  ],
+  "source": {
+    "file": "Syllabus_DAT26_QML.pdf",
+    "url": "https://moodle.fh-joanneum.at/pluginfile.php/318095/mod_resource/content/1/Syllabus_DAT26_QML.pdf",
+    "read_at": "2026-10-03"
+  },
+  "assessment": {
+    "first_attempt": [
+      {
+        "name": "Submission of the preparatory exercise",
+        "weight": 4,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "Self-assessments on the core topics (4 x 6 pts)",
+        "weight": 24,
+        "must_pass": false,
+        "kind": "self_assessment"
+      },
+      {
+        "name": "Submission of four solved exercises (4 x 6 pts)",
+        "weight": 24,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "Discussions during exercise sessions",
+        "weight": 12,
+        "must_pass": false,
+        "kind": "participation"
+      },
+      {
+        "name": "Presentation of one exercise task",
+        "weight": 12,
+        "must_pass": false,
+        "kind": "presentation"
+      },
+      {
+        "name": "Submission of the final exercise",
+        "weight": 24,
+        "must_pass": false,
+        "kind": "project"
+      }
+    ],
+    "retake": [
+      {
+        "name": "(Re-)submission of the preparatory exercise",
+        "weight": 4,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "(Repeated) self-assessment on the core topics",
+        "weight": 24,
+        "must_pass": false,
+        "kind": "self_assessment"
+      },
+      {
+        "name": "(Re-)submission of the solved exercises",
+        "weight": 24,
+        "must_pass": false,
+        "kind": "homework"
+      },
+      {
+        "name": "Oral assessment on submissions and course topics",
+        "weight": 48,
+        "must_pass": true,
+        "kind": "oral"
+      }
+    ],
+    "pass_rules": [
+      "Retake: at least 50 % on the oral assessment is required."
+    ],
+    "notes": [
+      "Repeating the first three criteria is mandatory if the 1st-attempt submission is missing or insufficient (usually < 50 %)."
+    ]
+  },
+  "ai_policy": {
+    "level": "allowed_except_assessments",
+    "summary": "AI allowed as a tool except in assessments; students are responsible for all AI output.",
+    "quote": "Generative AI is permitted as a tool, except for assessments, but all AI-generated or AI-modified texts and code have to be critically checked by the students and they take full responsibility for their submissions"
+  },
+  "attendance": {
+    "min_percent": 75,
+    "online_camera": true
+  },
+  "exemption_exam": {
+    "available": false
+  },
+  "tools": [
+    "Python",
+    "Notebooks"
+  ],
+  "topics": [
+    "Regression",
+    "Classification incl. image classification",
+    "Dimensionality reduction (PCA, nonlinear embeddings)",
+    "Clustering"
+  ],
+  "verified": false,
+  "structure": [
+    "Kickoff with preparatory exercise",
+    "Unit 1: Regression",
+    "Unit 2: Classification",
+    "Unit 3: Dimensional Reduction",
+    "Unit 4: Clustering",
+    "Final Exercise"
+  ]
+}

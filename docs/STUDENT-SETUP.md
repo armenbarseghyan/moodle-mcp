@@ -173,7 +173,15 @@ Restart Claude Code. The skills are written in English but work in any language 
 
 ---
 
-## Step 5 — Try it
+## Step 5 — Let Claude read your syllabi (once per semester)
+
+Ask *"set up my course profiles from the syllabi"*. Claude reads every course's syllabus and
+saves its rules (components and weights, what must be passed separately, AI policy,
+attendance) to `~/.config/moodle-mcp/courses/`. Check the overview table it shows you and
+confirm. From then on answers about grades and assignments use these rules — including the
+AI policy of each course, so Claude helps only in ways your course allows.
+
+## Step 6 — Try it
 
 Ask Claude:
 

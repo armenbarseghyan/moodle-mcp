@@ -1,0 +1,120 @@
+{
+  "schema": 1,
+  "programme": "DAT26",
+  "code": "PDP",
+  "name": "Programming and Data Processing",
+  "moodle_course_id": 12308,
+  "semester": 1,
+  "ects": 5,
+  "continuous_assessment": true,
+  "lecturers": [
+    "Erika Mustermann"
+  ],
+  "source": {
+    "file": "Syllabus_DAT26_PDP.pdf",
+    "url": "https://moodle.fh-joanneum.at/pluginfile.php/318093/mod_resource/content/2/Syllabus_DAT26_PDP.pdf",
+    "read_at": "2026-10-03"
+  },
+  "assessment": {
+    "first_attempt": [
+      {
+        "name": "Written Assessment R",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Code Assessment R",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Written Assessment Python",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Code Assessment Python",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Homework Assignments",
+        "weight": 30,
+        "must_pass": false,
+        "kind": "homework"
+      }
+    ],
+    "retake": [
+      {
+        "name": "Written Assessment R",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Code Assessment R",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Written Assessment Python",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Code Assessment Python",
+        "weight": 17.5,
+        "must_pass": true,
+        "kind": "exam"
+      },
+      {
+        "name": "Homework Assignments",
+        "weight": 30,
+        "must_pass": false,
+        "kind": "homework"
+      }
+    ],
+    "pass_rules": [
+      "Each of the four written/code assessments must be passed separately."
+    ],
+    "notes": [
+      "Points obtained from homework assignments are carried over to the next attempt.",
+      "Assessment criteria that have been passed do not need to be repeated.",
+      "Suspected non-independent work can lead to an additional oral examination."
+    ]
+  },
+  "ai_policy": {
+    "level": "homework",
+    "summary": "No AI in written or code assessments; AI may help with homework, but the code must be explainable in detail.",
+    "quote": "The use of AI tools is permitted in neither the written nor the code assessments. If AI tools are used for homework assignments, their output must be critically examined. Students must be able to explain the submitted code in detail."
+  },
+  "attendance": {
+    "min_percent": 75,
+    "online_camera": true
+  },
+  "exemption_exam": {
+    "available": false
+  },
+  "tools": [
+    "R",
+    "Python",
+    "Git (GitLab IT+)"
+  ],
+  "topics": [
+    "Programming paradigms",
+    "Operators and control structures",
+    "Functions and libraries",
+    "Regular expressions",
+    "Importing and exporting data",
+    "Version control",
+    "Clean coding and debugging",
+    "IDEs"
+  ],
+  "verified": false
+}

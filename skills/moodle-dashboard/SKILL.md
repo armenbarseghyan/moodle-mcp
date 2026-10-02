@@ -1,7 +1,7 @@
 ---
 name: moodle-dashboard
 description: Visual study dashboard from Moodle (FH JOANNEUM) — a polished HTML page with "urgent" cards, a day-by-day deadline timeline with submission status, teacher announcements and grades, light and dark theme, English/Russian/German labels. Use this skill whenever the user wants to see their studies visually, in any language — "make a dashboard", "show my week as a page", "visualise my deadlines", "study overview page", "сделай дашборд", "покажи неделю красиво", "визуализируй дедлайны", "Übersicht als Seite" — or asks for a briefing as a page rather than text. For a plain text "what's due" use moodle-briefing.
-allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Bash(python3:*), Bash(open:*), Write
+allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Bash(python3:*), Bash(open:*), Write, Read, Glob
 ---
 
 # Visual dashboard
@@ -72,6 +72,8 @@ Filling it in well is what makes the page useful:
   `/webservice/` and `token=`.
 - `plan` — 2–4 short steps in order of urgency, each with a time anchor ("Today", "By Mon
   23:59"). Ground every step in the data; skip the plan if nothing is due.
+- With course profiles (`~/.config/moodle-mcp/courses/`), add the weight to deadline titles
+  where useful ("Homework R2 · 30 % pool") and order `urgent` by must-pass/weight first.
 - Invent nothing: no data — empty list. "N assignments hidden" goes into `notes`.
 
 ## 3. Render and show

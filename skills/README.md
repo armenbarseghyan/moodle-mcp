@@ -11,6 +11,7 @@ German and English).
 | [moodle-assignment](moodle-assignment/SKILL.md) | one assignment: deadline, status, task sheet, checklist, plan, earlier feedback | "what do I need to do for Homework R2?" |
 | [moodle-grades](moodle-grades/SKILL.md) | grades, percentages, teacher feedback with translation | "how are my grades?", "что написал преподаватель?" |
 | [moodle-dashboard](moodle-dashboard/SKILL.md) | a visual HTML page: calendar, urgent cards, timeline, announcements, grades, plan | "make a dashboard of my next two weeks" |
+| [moodle-course-profile](moodle-course-profile/SKILL.md) | each course's rules from its syllabus: components, weights, must-pass parts, AI policy, attendance, exemption exams — used by the other skills | "how is DQL graded?", "can I use AI in MNS?", "составь профили курсов" |
 | [moodle-setup](moodle-setup/SKILL.md) | connection problems, getting and renewing a token, registration, HTTP mode | "moodle doesn't work", "как обновить токен" |
 
 ## Install
@@ -31,17 +32,33 @@ installing.
 - **Invent nothing**: empty data is said plainly; general knowledge is labelled as such.
 - **Read-only**: the skills point to where to click; the server cannot submit or post.
 - **Actions over facts**: "submit the draft" rather than "status: draft".
+- **Respect the course's AI policy**: with a course profile, help is matched to the syllabus
+  rule (no AI / learning only / homework / allowed except assessments).
+
+## Course profiles
+
+`moodle-course-profile` reads each syllabus once per semester and saves the rules as JSON in
+`~/.config/moodle-mcp/courses/<programme>/<CODE>.json` (outside the repository: they name
+lecturers and belong to one programme). `scripts/profile.py check|save|table|verify` validates
+them — e.g. weights must add up to 100, so a table row lost while reading the PDF cannot slip
+through. Briefing, assignment, grades and dashboard use the profiles when they exist.
 
 ## How they were tested
 
-`dev/skill-evals/` holds the eval set (8 realistic prompts across all six skills, in three
+`dev/skill-evals/` holds the eval set (10 realistic prompts across all seven skills, in three
 languages) and a programmatic grader. Runs use a fake Moodle (`dev/fakemoodle`, the same
 fixture world as the Go tests) through the real server binary (`dev/mcpcall`), so nothing
 touches the real site. Each prompt runs with and without the skills; results, grading and a
 review page live in `skills-workspace/` (git-ignored).
 
-Latest result (iteration 2): **100 % of assertions with skills vs. 94 % without**, same time,
-~5 % more tokens. The baseline is already strong because the server output is well structured;
-the skills add what the model does not do reliably on its own — carrying earlier teacher
-feedback into the next assignment, a complete token-recovery path, a consistent prioritised
-format, and a deterministic, themed dashboard.
+Results (subagent runs on the fake world, programmatic grading):
+
+- Iteration 2 — 8 prompts: **100 % of assertions with skills vs. 94 % without**, same time,
+  ~5 % more tokens. The baseline is already strong because the server output is well
+  structured; the skills add what the model does not do reliably on its own — carrying earlier
+  teacher feedback into the next assignment, a complete token-recovery path, a consistent
+  prioritised format, and a deterministic, themed dashboard.
+- Iteration 3 — course profiles: "how much is the homework worth / what must I pass" **7/7 vs.
+  3/7** (the baseline cannot see the rules without a profile in the fake world); "write the
+  homework for me": both decline and offer guided help, but only the skill quotes the course's
+  own AI rule. No regressions in briefing, assignment and grades (7/7 each).
