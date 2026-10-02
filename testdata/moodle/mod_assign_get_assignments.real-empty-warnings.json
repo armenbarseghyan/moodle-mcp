@@ -1,0 +1,38 @@
+{
+  "courses": [
+    {
+      "id": 12326,
+      "fullname": "(DAT_WS2026_1) Refresher on Unix Shells and LaTeX",
+      "shortname": "(DAT_WS2026_1) Refresher on Unix Shells and LaTeX",
+      "timemodified": 1790832828,
+      "assignments": []
+    },
+    {
+      "id": 12323,
+      "fullname": "(DAT_WS2026_1) Probability Theory and Descriptive Statistics",
+      "shortname": "(DAT_WS2026_1) Probability Theory and Descriptive Statistics",
+      "timemodified": 1790328945,
+      "assignments": []
+    }
+  ],
+  "warnings": [
+    {
+      "item": "module",
+      "itemid": 174061,
+      "warningcode": "1",
+      "message": "No access rights in module context"
+    },
+    {
+      "item": "module",
+      "itemid": 174054,
+      "warningcode": "1",
+      "message": "No access rights in module context"
+    },
+    {
+      "item": "module",
+      "itemid": 174302,
+      "warningcode": "1",
+      "message": "No access rights in module context"
+    }
+  ]
+}

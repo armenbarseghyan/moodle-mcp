@@ -1,0 +1,10 @@
+# secrets
+.env
+.env.*
+# raw site info contains the real name and username
+docs/site-info.json
+# build output
+/bin/
+/moodle-mcp
+*.test
+coverage.out

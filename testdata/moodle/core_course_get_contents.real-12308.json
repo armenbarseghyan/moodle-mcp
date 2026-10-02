@@ -1,0 +1,426 @@
+[
+  {
+    "id": 76438,
+    "name": "Allgemeines",
+    "visible": 1,
+    "summary": "",
+    "summaryformat": 1,
+    "section": 0,
+    "hiddenbynumsections": 0,
+    "uservisible": true,
+    "component": null,
+    "itemid": null,
+    "modules": [
+      {
+        "id": 172946,
+        "url": "https://moodle.fh-joanneum.at/mod/forum/view.php?id=172946",
+        "name": "Ankündigungen",
+        "instance": 21346,
+        "contextid": 318092,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/forum/1790931109/monologo?filtericon=1",
+        "modname": "forum",
+        "purpose": "collaboration",
+        "branded": false,
+        "modplural": "Foren",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": [],
+        "customdata": "{\"trackingtype\":\"1\"}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0
+      },
+      {
+        "id": 172947,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=172947",
+        "name": "Syllabus_DAT26_PDP",
+        "instance": 82157,
+        "contextid": 318093,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/pdf?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "window.open('https://moodle.fh-joanneum.at/mod/resource/view.php?id=172947&amp;redirect=1', '', 'width=620,height=450,toolbar=no,location=no,menubar=no,copyhistory=no,status=no,directories=no,scrollbars=yes,resizable=yes'); return false;",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "PDF",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:4:{s:10:\\\"popupwidth\\\";i:620;s:11:\\\"popupheight\\\";i:450;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"PDF-Dokument\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/pdf\\\";s:9:\\\"extension\\\";s:3:\\\"PDF\\\";}}\",\"display\":\"6\"}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "Syllabus_DAT26_PDP.pdf",
+            "filepath": "/",
+            "filesize": 227077,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/318093/mod_resource/content/2/Syllabus_DAT26_PDP.pdf?forcedownload=1",
+            "timecreated": 1790330023,
+            "timemodified": 1790330030,
+            "sortorder": 1,
+            "mimetype": "application/pdf",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": "Mustermann, Erika",
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 227077,
+          "lastmodified": 1790330030,
+          "mimetypes": [
+            "application/pdf"
+          ],
+          "repositorytype": ""
+        }
+      },
+      {
+        "id": 179516,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=179516",
+        "name": "Instruction on Git and the Linux Server",
+        "instance": 85191,
+        "contextid": 328393,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/archive?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "ZIP",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:3:{s:10:\\\"printintro\\\";i:1;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"Archiv (ZIP)\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/zip\\\";s:9:\\\"extension\\\";s:3:\\\"ZIP\\\";}}\",\"display\":4}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "ssh_instructions.html.zip",
+            "filepath": "/",
+            "filesize": 7583,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/328393/mod_resource/content/1/ssh_instructions.html.zip?forcedownload=1",
+            "timecreated": 1790861339,
+            "timemodified": 1790861354,
+            "sortorder": 1,
+            "mimetype": "application/zip",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": "Mustermann, Erika",
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 7583,
+          "lastmodified": 1790861354,
+          "mimetypes": [
+            "application/zip"
+          ],
+          "repositorytype": ""
+        }
+      },
+      {
+        "id": 179818,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=179818",
+        "name": "DAT26 PDP Organizational Matters",
+        "instance": 85265,
+        "contextid": 328780,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/pdf?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "PDF",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:3:{s:10:\\\"printintro\\\";i:1;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"PDF-Dokument\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/pdf\\\";s:9:\\\"extension\\\";s:3:\\\"PDF\\\";}}\",\"display\":5}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "DAT26_PDP_Organizational_Matters.pdf",
+            "filepath": "/",
+            "filesize": 742117,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/328780/mod_resource/content/1/DAT26_PDP_Organizational_Matters.pdf?forcedownload=1",
+            "timecreated": 1790930061,
+            "timemodified": 1790930064,
+            "sortorder": 1,
+            "mimetype": "application/pdf",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": "Mustermann, Erika",
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 742117,
+          "lastmodified": 1790930064,
+          "mimetypes": [
+            "application/pdf"
+          ],
+          "repositorytype": ""
+        }
+      },
+      {
+        "id": 179819,
+        "url": "https://moodle.fh-joanneum.at/mod/url/view.php?id=179819",
+        "name": "GitLab IT+",
+        "instance": 13613,
+        "contextid": 328781,
+        "description": "<div class=\"no-overflow\">Course materials will be provided exclusively on GitLab IT+, unless specified otherwise.<br></div>",
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/url/1790931109/monologo?filtericon=1",
+        "modname": "url",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Links/URLs",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "customdata": "{\"display\":4,\"filtericon\":true}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "url",
+            "filename": "GitLab IT+",
+            "filepath": null,
+            "filesize": 0,
+            "fileurl": "https://gitlab.itplus.fh-joanneum.at/",
+            "timecreated": null,
+            "timemodified": 1790878071,
+            "sortorder": null,
+            "userid": 4242,
+            "author": null,
+            "license": null
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 0,
+          "lastmodified": 1790878071,
+          "mimetypes": [],
+          "repositorytype": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": 85234,
+    "name": "R1",
+    "visible": 1,
+    "summary": "",
+    "summaryformat": 1,
+    "section": 1,
+    "hiddenbynumsections": 0,
+    "uservisible": true,
+    "component": null,
+    "itemid": null,
+    "modules": [
+      {
+        "id": 180115,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=180115",
+        "name": "Lecture",
+        "instance": 85394,
+        "contextid": 329217,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/pdf?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "PDF",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:3:{s:10:\\\"printintro\\\";i:1;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"PDF-Dokument\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/pdf\\\";s:9:\\\"extension\\\";s:3:\\\"PDF\\\";}}\",\"display\":5}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "PDP---Lecture-R1.pdf",
+            "filepath": "/",
+            "filesize": 2958940,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/329217/mod_resource/content/0/PDP---Lecture-R1.pdf?forcedownload=1",
+            "timecreated": 1790938844,
+            "timemodified": 1790938844,
+            "sortorder": 1,
+            "mimetype": "application/pdf",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": null,
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 2958940,
+          "lastmodified": 1790938844,
+          "mimetypes": [
+            "application/pdf"
+          ],
+          "repositorytype": ""
+        }
+      },
+      {
+        "id": 180116,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=180116",
+        "name": "Demo",
+        "instance": 85395,
+        "contextid": 329218,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/archive?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "ZIP",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:3:{s:10:\\\"printintro\\\";i:1;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"Archiv (ZIP)\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/zip\\\";s:9:\\\"extension\\\";s:3:\\\"ZIP\\\";}}\",\"display\":4}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "[PDP] - Demo R1.Rmd.zip",
+            "filepath": "/",
+            "filesize": 3122,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/329218/mod_resource/content/0/%5BPDP%5D%20-%20Demo%20R1.Rmd.zip?forcedownload=1",
+            "timecreated": 1790938865,
+            "timemodified": 1790938865,
+            "sortorder": 1,
+            "mimetype": "application/zip",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": null,
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 3122,
+          "lastmodified": 1790938865,
+          "mimetypes": [
+            "application/zip"
+          ],
+          "repositorytype": ""
+        }
+      },
+      {
+        "id": 180117,
+        "url": "https://moodle.fh-joanneum.at/mod/resource/view.php?id=180117",
+        "name": "Homework",
+        "instance": 85396,
+        "contextid": 329219,
+        "visible": 1,
+        "uservisible": true,
+        "visibleoncoursepage": 1,
+        "modicon": "https://moodle.fh-joanneum.at/theme/image.php/boost_union/core/1790931109/f/pdf?filtericon=1",
+        "modname": "resource",
+        "purpose": "content",
+        "branded": false,
+        "modplural": "Dateien",
+        "indent": 0,
+        "onclick": "",
+        "afterlink": null,
+        "activitybadge": {
+          "badgecontent": "PDF",
+          "badgestyle": "badge-none"
+        },
+        "customdata": "{\"filtericon\":true,\"displayoptions\":\"a:3:{s:10:\\\"printintro\\\";i:1;s:8:\\\"showtype\\\";i:1;s:11:\\\"filedetails\\\";a:3:{s:4:\\\"type\\\";s:12:\\\"PDF-Dokument\\\";s:8:\\\"mimetype\\\";s:15:\\\"application\\/pdf\\\";s:9:\\\"extension\\\";s:3:\\\"PDF\\\";}}\",\"display\":5}",
+        "noviewlink": false,
+        "completion": 0,
+        "downloadcontent": 1,
+        "dates": [],
+        "groupmode": 0,
+        "contents": [
+          {
+            "type": "file",
+            "filename": "R_1.pdf",
+            "filepath": "/",
+            "filesize": 174568,
+            "fileurl": "https://moodle.fh-joanneum.at/webservice/pluginfile.php/329219/mod_resource/content/0/R_1.pdf?forcedownload=1",
+            "timecreated": 1790938879,
+            "timemodified": 1790938879,
+            "sortorder": 1,
+            "mimetype": "application/pdf",
+            "isexternalfile": false,
+            "userid": 4242,
+            "author": null,
+            "license": "unknown"
+          }
+        ],
+        "contentsinfo": {
+          "filescount": 1,
+          "filessize": 174568,
+          "lastmodified": 1790938879,
+          "mimetypes": [
+            "application/pdf"
+          ],
+          "repositorytype": ""
+        }
+      }
+    ]
+  }
+]

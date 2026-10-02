@@ -1,0 +1,43 @@
+{
+  "usergrades": [
+    {
+      "courseid": 12308,
+      "courseidnumber": "175956-102831",
+      "userid": 4242,
+      "userfullname": "Max Student",
+      "useridnumber": "52616907",
+      "maxdepth": 2,
+      "gradeitems": [
+        {
+          "id": 37733,
+          "itemname": null,
+          "itemtype": "course",
+          "itemmodule": null,
+          "iteminstance": 8497,
+          "itemnumber": null,
+          "idnumber": null,
+          "categoryid": null,
+          "outcomeid": null,
+          "scaleid": null,
+          "locked": null,
+          "graderaw": null,
+          "gradedatesubmitted": null,
+          "gradedategraded": null,
+          "gradehiddenbydate": false,
+          "gradeneedsupdate": false,
+          "gradeishidden": false,
+          "gradeislocked": null,
+          "gradeisoverridden": null,
+          "gradeformatted": "-",
+          "grademin": 0,
+          "grademax": 0,
+          "rangeformatted": "0&ndash;0",
+          "percentageformatted": "-",
+          "feedback": "",
+          "feedbackformat": 0
+        }
+      ]
+    }
+  ],
+  "warnings": []
+}

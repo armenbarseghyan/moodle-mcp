@@ -1,0 +1,35 @@
+{
+  "lastattempt": {
+    "submission": {
+      "id": 5030,
+      "userid": 4242,
+      "attemptnumber": 0,
+      "timecreated": 1790000000,
+      "timemodified": 1790900000,
+      "timestarted": null,
+      "status": "new",
+      "groupid": 0,
+      "assignment": 503,
+      "latest": 1,
+      "plugins": [],
+      "gradingstatus": "notgraded"
+    },
+    "submissiongroupmemberswhoneedtosubmit": [],
+    "submissionsenabled": true,
+    "locked": false,
+    "graded": false,
+    "canedit": true,
+    "caneditowner": true,
+    "cansubmit": false,
+    "extensionduedate": null,
+    "blindmarking": false,
+    "gradingstatus": "notgraded",
+    "usergroups": []
+  },
+  "assignmentdata": {
+    "attachments": {
+      "intro": []
+    }
+  },
+  "warnings": []
+}

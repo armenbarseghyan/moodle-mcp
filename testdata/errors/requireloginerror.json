@@ -1,0 +1,5 @@
+{
+  "exception": "core\\exception\\require_login_exception",
+  "errorcode": "requireloginerror",
+  "message": "Kurs oder Aktivität nicht benutzbar"
+}
