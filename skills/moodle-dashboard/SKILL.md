@@ -1,6 +1,6 @@
 ---
 name: moodle-dashboard
-description: Visual study dashboard from Moodle (FH JOANNEUM) — a polished HTML page with "urgent" cards, a day-by-day deadline timeline with submission status, teacher announcements and grades, light and dark theme, English/Russian/German labels. Use this skill whenever the user wants to see their studies visually, in any language — "make a dashboard", "show my week as a page", "visualise my deadlines", "study overview page", "сделай дашборд", "покажи неделю красиво", "визуализируй дедлайны", "Übersicht als Seite" — or asks for a briefing as a page rather than text. For a plain text "what's due" use moodle-briefing.
+description: Visual study dashboard from Moodle (FH JOANNEUM) — a polished HTML page with "urgent" cards, a day-by-day deadline timeline with submission status, teacher announcements and grades, light and dark theme. Use this skill whenever the user wants to see their studies visually, in any language — "make a dashboard", "show my week as a page", "visualise my deadlines", "study overview page", "Übersicht als Seite" — or asks for a briefing as a page rather than text. For a plain text "what's due" use moodle-briefing.
 allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Bash(python3:*), Bash(open:*), Write, Read, Glob
 ---
 
@@ -19,9 +19,9 @@ deadlines only). Change the period if asked ("this month" → `days=30`).
 
 ## 2. JSON
 
-Write a file (e.g. in a temporary folder) of this shape. `lang` is the user's language
-(`en`, `ru` or `de`): it sets the page's labels. Write every text value (titles, summaries,
-dates) in that language too; keep quotes, course and file names in the original. Empty
+Write a file (e.g. in a temporary folder) of this shape. `lang` sets the page's labels
+(`en`; further languages can be added in the template's `I18N` table). Write every text value
+in English; keep quotes, course and file names in the original. Empty
 sections are empty lists or absent; the template shows "nothing here" on its own.
 
 ```json
@@ -59,7 +59,7 @@ Filling it in well is what makes the page useful:
 - `today` and each item's `date` (`YYYY-MM-DD`, Vienna) drive the calendar grid at the top: whole
   weeks around today and all deadlines, today highlighted, each deadline as a coloured chip.
 - `deadlines` — chronological, grouped by an identical `day` value. `kind` in the user's
-  language ("тест", "задание", "quiz"). `status`: `done`, `graded`,
+  language ("quiz"). `status`: `done`, `graded`,
   `draft` (uploaded, not submitted), `todo` (not submitted), `overdue`, `reopened`, `na`
   (quiz or not an assignment), `unknown`. Put overdue unsubmitted items here too, first, with
   `overdue`.

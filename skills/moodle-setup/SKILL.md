@@ -1,6 +1,6 @@
 ---
 name: moodle-setup
-description: Diagnose and set up the Moodle MCP server (moodle-mcp) — token, connection, available functions, installing and connecting it to Claude Code, HTTP mode. Use this skill whenever moodle_* tools return an error ("invalid token", "MOODLE_TOKEN not set", "no connection", timeout), when the user says "moodle isn't working", "the moodle mcp won't connect", "how do I renew my token", "how do I connect moodle to claude", "мудл не работает", "как обновить токен", "Moodle geht nicht", or when no moodle_* tools are available in the session at all.
+description: Diagnose and set up the Moodle MCP server (moodle-mcp) — token, connection, available functions, installing and connecting it to Claude Code, HTTP mode. Use this skill whenever moodle_* tools return an error ("invalid token", "MOODLE_TOKEN not set", "no connection", timeout), when the user says "moodle isn't working", "the moodle mcp won't connect", "how do I renew my token", "how do I connect moodle to claude", "Moodle geht nicht", or when no moodle_* tools are available in the session at all.
 allowed-tools: mcp__moodle__moodle_whoami
 ---
 

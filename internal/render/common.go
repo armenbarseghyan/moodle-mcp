@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,10 +31,13 @@ type doc struct {
 
 func newDoc() *doc { return &doc{limit: MaxChars} }
 
+// line appends one line. format is an English catalog key printed through
+// textfmt.P(), so it can be translated later; pass identifiers (ids, names,
+// URLs) as strings, the printer localises %d numbers.
 func (d *doc) line(format string, args ...any) {
 	s := format
 	if len(args) > 0 {
-		s = fmt.Sprintf(format, args...)
+		s = textfmt.P().Sprintf(format, args...)
 	}
 	if d.dropped > 0 || d.b.Len()+len(s)+1 > d.limit {
 		d.dropped++
@@ -52,12 +56,12 @@ func (d *doc) blank() {
 // finish appends the truncation note and the cache note.
 func (d *doc) finish(now, fetchedAt time.Time) string {
 	if d.dropped > 0 {
-		fmt.Fprintf(&d.b, "\n… ещё %d %s не показано — уточни запрос.\n",
-			d.dropped, textfmt.Plural(d.dropped, "строка", "строки", "строк"))
+		p := textfmt.P()
+		fmt.Fprintf(&d.b, "\n… %s %s\n", p.Sprintf("%d more lines", d.dropped), p.Sprintf("not shown — narrow the request."))
 	}
 	if !fetchedAt.IsZero() && now.Sub(fetchedAt) >= staleAfter {
-		fmt.Fprintf(&d.b, "\n_Данные из кэша, %s; для свежих — refresh=true._\n",
-			textfmt.Relative(fetchedAt, now))
+		fmt.Fprintf(&d.b, "\n_%s_\n", textfmt.P().Sprintf("Cached data from %s; use refresh=true for fresh data.",
+			textfmt.Relative(fetchedAt, now)))
 	}
 	return strings.TrimRight(d.b.String(), "\n") + "\n"
 }
@@ -75,70 +79,38 @@ func escapeURL(u string) string {
 	return strings.NewReplacer(" ", "%20", "(", "%28", ")", "%29").Replace(u)
 }
 
-// when renders "2026-10-07 17:15 (среда) — через 5 дней".
+// when renders "2026-10-07 17:15 (Wednesday) — in 5 days".
 func when(t, now time.Time) string {
 	return textfmt.Date(t) + " — " + textfmt.Relative(t, now)
 }
 
-// Size renders a byte count: "512 Б", "222 КБ", "2,8 МБ".
+// Size renders a byte count: "512 B", "222 KB", "2.8 MB".
 func Size(n int64) string {
 	switch {
 	case n <= 0:
 		return ""
 	case n < 1024:
-		return fmt.Sprintf("%d Б", n)
+		return fmt.Sprintf("%d B", n)
 	case n < 1024*1024:
-		return fmt.Sprintf("%d КБ", (n+512)/1024)
+		return fmt.Sprintf("%d KB", (n+512)/1024)
 	default:
-		return strings.Replace(fmt.Sprintf("%.1f МБ", float64(n)/(1024*1024)), ".", ",", 1)
+		return fmt.Sprintf("%.1f MB", float64(n)/(1024*1024))
 	}
 }
 
+var kindLabels = map[string]string{
+	"assign": "assignment", "quiz": "quiz", "resource": "file", "folder": "folder", "url": "link",
+	"page": "page", "book": "book", "forum": "forum", "lti": "external tool", "h5pactivity": "H5P",
+	"hvp": "H5P", "choice": "choice", "feedback": "survey", "questionnaire": "survey",
+	"workshop": "peer review", "lesson": "lesson", "scorm": "SCORM", "glossary": "glossary",
+	"wiki": "wiki", "label": "text", "subsection": "subsection", "manual": "manual",
+}
+
 func kindLabel(modname string) string {
-	switch modname {
-	case "assign":
-		return "задание"
-	case "quiz":
-		return "тест"
-	case "resource":
-		return "файл"
-	case "folder":
-		return "папка"
-	case "url":
-		return "ссылка"
-	case "page":
-		return "страница"
-	case "book":
-		return "книга"
-	case "forum":
-		return "форум"
-	case "lti":
-		return "внешний инструмент"
-	case "h5pactivity", "hvp":
-		return "H5P"
-	case "choice":
-		return "опрос"
-	case "feedback", "questionnaire":
-		return "анкета"
-	case "workshop":
-		return "взаимооценка"
-	case "lesson":
-		return "урок"
-	case "scorm":
-		return "SCORM"
-	case "glossary":
-		return "глоссарий"
-	case "wiki":
-		return "вики"
-	case "label":
-		return "текст"
-	case "subsection":
-		return "подраздел"
-	case "manual":
-		return "вручную"
-	default:
-		return modname
+	if l, ok := kindLabels[modname]; ok {
+		return textfmt.P().Sprintf(l)
 	}
+	return modname
 }
 
 func courseErrors(d *doc, errs []study.CourseError) {
@@ -151,9 +123,10 @@ func courseErrors(d *doc, errs []study.CourseError) {
 	}
 }
 
-// ErrorText explains an error in plain Russian. It never contains the token:
+// ErrorText explains an error in plain words. It never contains the token:
 // every error from the client is already redacted.
 func ErrorText(err error) string {
+	p := textfmt.P()
 	var (
 		hErr *moodle.HTTPError
 		mErr *moodle.Error
@@ -163,31 +136,31 @@ func ErrorText(err error) string {
 	case err == nil:
 		return ""
 	case errors.Is(err, moodle.ErrInvalidToken):
-		return "Токен Moodle недействителен или отозван. Создай новый в Moodle " +
-			"(Profil → Einstellungen → Sicherheitsschlüssel, сервис moodle_mobile_app) и обнови MOODLE_TOKEN."
+		return p.Sprintf("The Moodle token is invalid or revoked. Create a new one in Moodle " +
+			"(Profile → Preferences → Security keys, service moodle_mobile_app) and update MOODLE_TOKEN.")
 	case errors.Is(err, moodle.ErrAccessDenied):
-		return "Moodle запретил вызов (access control): функция не входит в сервис токена или отключена для твоей роли."
+		return p.Sprintf("Moodle refused the call (access control): the function is not part of the token's service or is disabled for your role.")
 	case errors.Is(err, moodle.ErrNotAccessible):
-		return "Курс или активность недоступны (скрыты или ограничены)."
+		return p.Sprintf("The course or activity is not accessible (hidden or restricted).")
 	case errors.Is(err, moodle.ErrMaintenance):
-		return "Moodle сейчас на обслуживании, попробуй позже."
+		return p.Sprintf("Moodle is in maintenance mode, try again later.")
 	case errors.Is(err, moodle.ErrNotAllowed):
-		return "Эта функция Moodle не разрешена: сервер работает только на чтение."
+		return p.Sprintf("This Moodle function is not allowed: the server is read-only.")
 	case errors.Is(err, moodle.ErrForeignURL):
-		return "Ссылка не ведёт на файл этого Moodle (нужен адрес вида …/pluginfile.php/…). " +
-			"С других адресов сервер не скачивает, чтобы не отдать токен."
+		return p.Sprintf("The link does not point to a file of this Moodle (expected …/pluginfile.php/…). " +
+			"The server does not download from other sites, so the token never leaves.")
 	case errors.Is(err, moodle.ErrUnexpectedResponse):
-		return "Moodle вернул не-JSON ответ — возможно, обслуживание или сбой прокси."
+		return p.Sprintf("Moodle returned a non-JSON response — maintenance or a proxy problem.")
 	case errors.Is(err, context.DeadlineExceeded):
-		return "Moodle не ответил вовремя (таймаут)."
+		return p.Sprintf("Moodle did not answer in time (timeout).")
 	case errors.As(err, &hErr):
-		return fmt.Sprintf("Moodle ответил HTTP %d.", hErr.Status)
+		return p.Sprintf("Moodle answered HTTP %s.", strconv.Itoa(hErr.Status))
 	case errors.As(err, &mErr):
-		return fmt.Sprintf("Moodle вернул ошибку %s: %s", mErr.ErrorCode, mErr.Message)
+		return p.Sprintf("Moodle returned the error %s: %s", mErr.ErrorCode, mErr.Message)
 	case errors.As(err, &uErr) && uErr.Timeout():
-		return "Moodle не ответил вовремя (таймаут)."
+		return p.Sprintf("Moodle did not answer in time (timeout).")
 	case errors.As(err, &uErr):
-		return "Нет связи с Moodle: " + uErr.Err.Error()
+		return p.Sprintf("Cannot reach Moodle: %s", uErr.Err.Error())
 	default:
 		return err.Error()
 	}

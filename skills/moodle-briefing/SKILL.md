@@ -1,6 +1,6 @@
 ---
 name: moodle-briefing
-description: Study briefing from Moodle (FH JOANNEUM) — what is urgent, what teachers announced, what is due and whether it is submitted. Use this skill whenever the user asks about their studies in general or about the near future, in any language — "what's due this week", "anything urgent on moodle?", "did I miss anything?", "good morning, what's up at uni", "что у меня по учёбе", "что сдавать на неделе", "есть что-то срочное в мудле?", "was steht diese Woche an", "habe ich etwas verpasst" — even if Moodle is not named, and for daily or weekly check-ins. Do not use it to find a specific material (moodle-materials) or to work through one assignment (moodle-assignment).
+description: Study briefing from Moodle (FH JOANNEUM) — what is urgent, what teachers announced, what is due and whether it is submitted. Use this skill whenever the user asks about their studies in general or about the near future, in any language — "what's due this week", "anything urgent on moodle?", "did I miss anything?", "good morning, what's up at uni", "was steht diese Woche an", "habe ich etwas verpasst" — even if Moodle is not named, and for daily or weekly check-ins. Do not use it to find a specific material (moodle-materials) or to work through one assignment (moodle-assignment).
 allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Read, Glob
 ---
 

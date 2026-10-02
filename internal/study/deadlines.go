@@ -23,7 +23,7 @@ type DeadlinesResult struct {
 	Upcoming  []Deadline
 	Overdue   []Deadline // unsubmitted assignments due in the last 7 days
 	Hidden    int        // assignments Moodle reported as not accessible
-	Warnings  []string   // e.g. "календарь недоступен"
+	Warnings  []string   // e.g. "calendar unavailable"
 	Errors    []CourseError
 	FetchedAt time.Time
 }
@@ -87,10 +87,10 @@ func (s *Service) Deadlines(ctx context.Context, days int, includeOverdue, refre
 		return res, errors.Join(eventsErr, assignsErr)
 	}
 	if eventsErr != nil {
-		res.Warnings = append(res.Warnings, "календарь недоступен: "+eventsErr.Error())
+		res.Warnings = append(res.Warnings, textfmt.P().Sprintf("calendar unavailable: %s", eventsErr.Error()))
 	}
 	if assignsErr != nil {
-		res.Warnings = append(res.Warnings, "список заданий недоступен, статусы сдачи неизвестны: "+assignsErr.Error())
+		res.Warnings = append(res.Warnings, textfmt.P().Sprintf("assignment list unavailable, submission status unknown: %s", assignsErr.Error()))
 	}
 	for _, w := range assigns.Warnings {
 		if w.Item == "module" || w.Item == "course" {
@@ -166,7 +166,7 @@ func MergeDeadlines(events []moodle.Event, courses []moodle.CourseAssignments, r
 			return r
 		}
 		if fallback == "" {
-			fallback = "курс " + itoa(id)
+			fallback = "course " + itoa(id)
 		}
 		return CourseRef{ID: id, Label: fallback}
 	}

@@ -77,12 +77,12 @@ func staticToken(want string) auth.TokenVerifier {
 func CheckListenAddr(addr, token string) error {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
-		return fmt.Errorf("неверный адрес %q: %w", addr, err)
+		return fmt.Errorf("invalid address %q: %w", addr, err)
 	}
 	if isLoopback(host) || token != "" {
 		return nil
 	}
-	return errors.New("адрес " + addr + " доступен не только с этой машины: задай MCP_HTTP_TOKEN или слушай 127.0.0.1")
+	return errors.New("address " + addr + " is reachable from other machines: set MCP_HTTP_TOKEN or listen on 127.0.0.1")
 }
 
 func isLoopback(host string) bool {

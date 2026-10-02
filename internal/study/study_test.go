@@ -577,11 +577,11 @@ func TestToAnnouncement(t *testing.T) {
 func TestMatchFile(t *testing.T) {
 	t.Parallel()
 	doc := []extract.Part{
-		{Label: "стр. 1", Text: "WORKING ON A DAT VM\nHost ca-crs-dat-NN\nNetwork on campus: directly"},
-		{Label: "стр. 2", Text: "Username your short FH username\noffcampus: FH VPN required\nRDP"},
-		{Label: "стр. 3", Text: "Windows: Remote Desktop Connection\nmacOS: Windows App — App Store\nVPN client: Ivanti"},
-		{Label: "стр. 4", Text: "The lab PC is di ff erent from your laptop"},
-		{Label: "стр. 5", Text: "A class hierarchy"},
+		{Label: "p. 1", Text: "WORKING ON A DAT VM\nHost ca-crs-dat-NN\nNetwork on campus: directly"},
+		{Label: "p. 2", Text: "Username your short FH username\noffcampus: FH VPN required\nRDP"},
+		{Label: "p. 3", Text: "Windows: Remote Desktop Connection\nmacOS: Windows App — App Store\nVPN client: Ivanti"},
+		{Label: "p. 4", Text: "The lab PC is di ff erent from your laptop"},
+		{Label: "p. 5", Text: "A class hierarchy"},
 	}
 	tests := []struct {
 		name        string
@@ -590,12 +590,12 @@ func TestMatchFile(t *testing.T) {
 		wantLabels  []string
 		wantSnippet string
 	}{
-		{"single word on two pages", "vpn", true, []string{"стр. 2", "стр. 3"}, "offcampus: FH VPN required"},
-		{"pdf lost the space", "off campus", true, []string{"стр. 2"}, "offcampus"},
-		{"pdf invented spaces", "different", true, []string{"стр. 4"}, "di ff erent"},
-		{"case and punctuation", "Remote-Desktop", true, []string{"стр. 3"}, "Remote Desktop Connection"},
-		{"words on different pages", "campus ivanti", true, []string{"стр. 1", "стр. 2", "стр. 3"}, ""},
-		{"only pages with every word are listed", "vpn required", true, []string{"стр. 2"}, "VPN required"},
+		{"single word on two pages", "vpn", true, []string{"p. 2", "p. 3"}, "offcampus: FH VPN required"},
+		{"pdf lost the space", "off campus", true, []string{"p. 2"}, "offcampus"},
+		{"pdf invented spaces", "different", true, []string{"p. 4"}, "di ff erent"},
+		{"case and punctuation", "Remote-Desktop", true, []string{"p. 3"}, "Remote Desktop Connection"},
+		{"words on different pages", "campus ivanti", true, []string{"p. 1", "p. 2", "p. 3"}, ""},
+		{"only pages with every word are listed", "vpn required", true, []string{"p. 2"}, "VPN required"},
 		{"missing word", "vpn kubernetes", false, nil, ""},
 		{"short word must not match across words", "ssh", false, nil, ""},
 		{"empty query", "  ", false, nil, ""},

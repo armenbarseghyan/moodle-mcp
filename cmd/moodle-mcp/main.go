@@ -118,11 +118,11 @@ func newClient(token string, logger *slog.Logger) (*moodle.Client, error) {
 	base := os.Getenv("MOODLE_URL")
 	switch {
 	case base == "" && token == "":
-		return nil, errors.New("не заданы MOODLE_URL и MOODLE_TOKEN")
+		return nil, errors.New("MOODLE_URL and MOODLE_TOKEN are not set")
 	case base == "":
-		return nil, errors.New("не задан MOODLE_URL")
+		return nil, errors.New("MOODLE_URL is not set")
 	case token == "":
-		return nil, errors.New("не задан MOODLE_TOKEN")
+		return nil, errors.New("MOODLE_TOKEN is not set")
 	}
 	return moodle.New(moodle.Config{BaseURL: base, Token: token, Logger: logger})
 }

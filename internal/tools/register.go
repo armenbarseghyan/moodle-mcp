@@ -29,11 +29,11 @@ type Deps struct {
 }
 
 // Instructions are sent to the client on initialisation.
-const Instructions = `Read-only доступ к Moodle студента FH JOANNEUM.
-Что сдать и когда — moodle_deadlines; что написали преподаватели — moodle_announcements (самое срочное).
-Найти материал, не зная курса — moodle_search; структура курса — moodle_course_contents.
-Ссылки в ответах открываются в браузере пользователя (он залогинен в Moodle) — давай их как есть.
-moodle_download нужен только если файл нужен локально. Все даты — Europe/Vienna.`
+const Instructions = `Read-only access to an FH JOANNEUM student's Moodle.
+What is due and when: moodle_deadlines. What teachers posted: moodle_announcements (check first, it is often the most urgent).
+Find material without knowing the course: moodle_search; a course's structure: moodle_course_contents.
+Links in answers open in the user's browser, where they are signed in to Moodle — pass them on as they are.
+Use moodle_download only when a file is needed locally. All dates are Europe/Vienna.`
 
 // Register adds all tools to s.
 func Register(s *mcp.Server, d Deps) {
@@ -48,8 +48,8 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:        "moodle_courses",
-		Title:       "Мои курсы",
-		Description: "Активные курсы: id, название, даты, прогресс. Скрытые и завершённые — только с include_past.",
+		Title:       "My courses",
+		Description: "Active courses: id, name, dates, progress. Hidden and completed courses only with include_past.",
 		Annotations: ro,
 		InputSchema: schema[CoursesIn](nil),
 	}, func(ctx context.Context, in CoursesIn) (string, error) {
@@ -59,9 +59,9 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:  "moodle_deadlines",
-		Title: "Дедлайны",
-		Description: "Главный инструмент: что сдать в ближайшие N дней. Объединяет календарь Moodle и сроки заданий, " +
-			"для каждого задания показывает, сдано ли оно, плюс просроченные несданные за 7 дней. Дата, курс, название, тип, статус, ссылка.",
+		Title: "Deadlines",
+		Description: "The main tool: what is due in the next N days. Merges the Moodle calendar with assignment due dates, " +
+			"shows for every assignment whether it is submitted, plus unsubmitted ones overdue by up to 7 days. Date, course, title, type, status, link.",
 		Annotations: ro,
 		InputSchema: schema[DeadlinesIn](map[string]prop{
 			"days":            {Default: 14, Min: ptr(1.0), Max: ptr(90.0)},
@@ -75,9 +75,9 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:  "moodle_course_contents",
-		Title: "Содержимое курса",
-		Description: "Материалы курса по разделам: модули, типы, ссылки на файлы (открываются в браузере). " +
-			"course — id или часть названия.",
+		Title: "Course contents",
+		Description: "A course's material by section: modules, types and links to files (open in the browser). " +
+			"course is an id or part of the name.",
 		Annotations: ro,
 		InputSchema: schema[ContentsIn](map[string]prop{"course": {MinLen: ptr(1)}}),
 	}, func(ctx context.Context, in ContentsIn) (string, error) {
@@ -87,10 +87,10 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:  "moodle_search",
-		Title: "Поиск материалов",
-		Description: "Поиск материалов, когда помнишь тему, но не курс: названия модулей, описания, разделы и имена файлов " +
-			"во всех активных курсах. С in_files=true — ещё и текст внутри PDF, docx, pptx, ipynb, zip и страниц Moodle " +
-			"(с номерами страниц и цитатой). Текст файлов кэшируется, пока файл не изменился.",
+		Title: "Search material",
+		Description: "Find material when you remember the topic but not the course: module names, descriptions, sections and file names " +
+			"in all active courses. With in_files=true also the text inside PDF, docx, pptx, ipynb, zip and Moodle pages " +
+			"(with page numbers and a quote). File text is cached until the file changes.",
 		Annotations: ro,
 		InputSchema: schema[SearchIn](map[string]prop{"query": {MinLen: ptr(2)}}),
 	}, func(ctx context.Context, in SearchIn) (string, error) {
@@ -100,8 +100,8 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:        "moodle_grades",
-		Title:       "Оценки",
-		Description: "Оценки: балл, максимум, процент, фидбек преподавателя. По одному курсу или по всем активным. Всегда свежие (без кэша).",
+		Title:       "Grades",
+		Description: "Grades: score, maximum, percentage and teacher feedback, for one course or all active ones. Always fresh (no cache).",
 		Annotations: ro,
 		InputSchema: schema[GradesIn](nil),
 	}, func(ctx context.Context, in GradesIn) (string, error) {
@@ -111,9 +111,9 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:  "moodle_announcements",
-		Title: "Объявления",
-		Description: "Свежие сообщения из форумов-объявлений всех курсов — то, что преподаватели пишут в последний момент " +
-			"(перенос, смена аудитории). Проверяй в первую очередь.",
+		Title: "Announcements",
+		Description: "Recent posts in the announcement forums of all courses — what teachers send at the last minute " +
+			"(rescheduling, room changes). Check this first.",
 		Annotations: ro,
 		InputSchema: schema[AnnouncementsIn](map[string]prop{"days": {Default: 7, Min: ptr(1.0), Max: ptr(90.0)}}),
 	}, func(ctx context.Context, in AnnouncementsIn) (string, error) {
@@ -123,9 +123,9 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:  "moodle_download",
-		Title: "Скачать файл",
-		Description: "Скачивает файл Moodle на диск и возвращает локальный путь. Нужен, только если файл нужен локально " +
-			"(например, прочитать его); чтобы просто открыть — достаточно ссылки.",
+		Title: "Download a file",
+		Description: "Downloads a Moodle file to disk and returns the local path. Only needed when the file is needed locally " +
+			"(e.g. to read it); to just open it, the link is enough.",
 		Annotations: &mcp.ToolAnnotations{DestructiveHint: ptr(false), IdempotentHint: true, OpenWorldHint: ptr(true)},
 		InputSchema: schema[DownloadIn](map[string]prop{"fileurl": {MinLen: ptr(1)}}),
 	}, func(ctx context.Context, in DownloadIn) (string, error) {
@@ -135,8 +135,8 @@ func Register(s *mcp.Server, d Deps) {
 
 	add(s, d, &mcp.Tool{
 		Name:        "moodle_whoami",
-		Title:       "Диагностика",
-		Description: "Проверка токена и сайта: имя, логин, версия Moodle, число функций и каких функций серверу не хватает.",
+		Title:       "Diagnostics",
+		Description: "Checks the token and the site: name, login, Moodle version, number of functions and which functions the server is missing.",
 		Annotations: ro,
 		InputSchema: schema[WhoAmIIn](nil),
 	}, func(ctx context.Context, _ WhoAmIIn) (string, error) {

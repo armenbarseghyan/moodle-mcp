@@ -3,7 +3,6 @@
 package textfmt
 
 import (
-	"fmt"
 	"time"
 	_ "time/tzdata" // embed the zone database: the binary must not depend on the host's
 )
@@ -19,12 +18,12 @@ func mustLoad(name string) *time.Location {
 	return loc
 }
 
-var weekdays = [...]string{"воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"}
+var weekdays = [...]string{"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}
 
-// Date formats t as "2026-10-07 17:15 (среда)" in Vienna time.
+// Date formats t as "2026-10-07 17:15 (Wednesday)" in Vienna time.
 func Date(t time.Time) string {
 	v := t.In(Vienna)
-	return fmt.Sprintf("%s (%s)", v.Format("2006-01-02 15:04"), weekdays[v.Weekday()])
+	return v.Format("2006-01-02 15:04") + " (" + P().Sprintf(weekdays[v.Weekday()]) + ")"
 }
 
 // Day formats t as "2026-10-07" in Vienna time.
@@ -38,38 +37,39 @@ func DayStart(t time.Time, offset int) time.Time {
 	return time.Date(v.Year(), v.Month(), v.Day()+offset, 0, 0, 0, 0, Vienna)
 }
 
-// Relative describes t relative to now in Russian, using Vienna calendar days:
-// "через 40 мин", "сегодня, через 3 ч", "завтра", "через 4 дня",
-// "только что", "2 ч назад", "вчера", "5 дней назад".
+// Relative describes t relative to now using Vienna calendar days:
+// "in 40 min", "today, in 3 h", "tomorrow", "in 4 days",
+// "just now", "15 min ago", "today, 3 h ago", "yesterday", "5 days ago".
 func Relative(t, now time.Time) string {
+	p := P()
 	d := t.Sub(now)
 	days := civilDay(t) - civilDay(now)
 	if d >= 0 {
 		switch {
 		case d < time.Minute:
-			return "сейчас"
+			return p.Sprintf("now")
 		case d < time.Hour:
-			return fmt.Sprintf("через %d мин", int(d.Minutes()))
+			return p.Sprintf("in %d min", int(d.Minutes()))
 		case days == 0:
-			return fmt.Sprintf("сегодня, через %d ч", int(d.Hours()))
+			return p.Sprintf("today, in %d h", int(d.Hours()))
 		case days == 1:
-			return "завтра"
+			return p.Sprintf("tomorrow")
 		default:
-			return fmt.Sprintf("через %d %s", days, Plural(days, "день", "дня", "дней"))
+			return p.Sprintf("in %d days", days)
 		}
 	}
 	d, days = -d, -days
 	switch {
 	case d < time.Minute:
-		return "только что"
+		return p.Sprintf("just now")
 	case d < time.Hour:
-		return fmt.Sprintf("%d мин назад", int(d.Minutes()))
+		return p.Sprintf("%d min ago", int(d.Minutes()))
 	case days == 0:
-		return fmt.Sprintf("сегодня, %d ч назад", int(d.Hours()))
+		return p.Sprintf("today, %d h ago", int(d.Hours()))
 	case days == 1:
-		return "вчера"
+		return p.Sprintf("yesterday")
 	default:
-		return fmt.Sprintf("%d %s назад", days, Plural(days, "день", "дня", "дней"))
+		return p.Sprintf("%d days ago", days)
 	}
 }
 
@@ -77,19 +77,4 @@ func Relative(t, now time.Time) string {
 func civilDay(t time.Time) int {
 	y, m, d := t.In(Vienna).Date()
 	return int(time.Date(y, m, d, 0, 0, 0, 0, time.UTC).Unix() / 86400)
-}
-
-// Plural picks the Russian plural form for n: 1 день, 2 дня, 5 дней, 21 день.
-func Plural(n int, one, few, many string) string {
-	if n < 0 {
-		n = -n
-	}
-	switch n10, n100 := n%10, n%100; {
-	case n10 == 1 && n100 != 11:
-		return one
-	case n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14):
-		return few
-	default:
-		return many
-	}
 }

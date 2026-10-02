@@ -1,115 +1,116 @@
 # moodle-mcp
 
-Read-only MCP-сервер для Moodle (FH JOANNEUM, Moodle 4.5) на Go. Отвечает на учебные
-вопросы — что сдать, что написали преподаватели, где лежит материал — собирая несколько
-вызовов Moodle Web Services под капотом. Ничего в Moodle не меняет: клиент физически не
-может вызвать функцию вне allowlist из 9 getter-функций.
+A read-only MCP server for Moodle (FH JOANNEUM, Moodle 4.5), written in Go. It answers study
+questions — what is due, what teachers posted, where a piece of material is — by combining
+several Moodle Web Service calls behind each tool. It cannot change anything in Moodle: the
+client refuses every function outside an allowlist of 9 getters.
 
-Архитектура и принятые решения — [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Setting it up as a student (token, build, Claude Code / Claude Desktop): [docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md).
 
-## Установка
+## Install
 
-Нужен Go 1.25+ (с `GOTOOLCHAIN=auto` нужная версия скачается сама).
+Requires Go 1.25+ (with `GOTOOLCHAIN=auto` the right version is downloaded automatically).
 
 ```bash
 make build        # → bin/moodle-mcp
 ```
 
-## Переменные окружения
+## Environment
 
-| Переменная | Обязательна | По умолчанию | Что это |
+| Variable | Required | Default | Meaning |
 |---|---|---|---|
-| `MOODLE_URL` | да | — | адрес сайта, `https://moodle.fh-joanneum.at` |
-| `MOODLE_TOKEN` | да | — | персональный токен сервиса `moodle_mobile_app` |
-| `MOODLE_DOWNLOAD_DIR` | нет | `~/Downloads/moodle` | куда `moodle_download` кладёт файлы |
-| `MOODLE_LOG_LEVEL` | нет | `info` | `debug`, `info`, `warn`, `error` |
-| `MCP_HTTP_ADDR` | нет | — | то же, что флаг `-http`: слушать streamable HTTP вместо stdio |
-| `MCP_HTTP_TOKEN` | для не-loopback адреса | — | bearer-токен, который HTTP-клиенты должны присылать |
+| `MOODLE_URL` | yes | — | site URL, `https://moodle.fh-joanneum.at` |
+| `MOODLE_TOKEN` | yes | — | personal token of the `moodle_mobile_app` service |
+| `MOODLE_DOWNLOAD_DIR` | no | `~/Downloads/moodle` | where `moodle_download` and dashboards put files |
+| `MOODLE_LOG_LEVEL` | no | `info` | `debug`, `info`, `warn`, `error` |
+| `MCP_HTTP_ADDR` | no | — | same as `-http`: serve streamable HTTP instead of stdio |
+| `MCP_HTTP_TOKEN` | for non-loopback addresses | — | bearer token HTTP clients must send |
 
-Токен читается только из окружения. Логи пишутся в stderr; токен в них, в ошибках и в
-ответах инструментов маскируется (`[REDACTED]`). Если переменные не заданы, сервер всё
-равно стартует и каждый инструмент объясняет, чего не хватает.
+The token is read from the environment only. Logs go to stderr; the token is masked
+(`[REDACTED]`) in logs, errors and tool output. If the variables are missing the server still
+starts and every tool explains what is missing.
 
-Токен: Moodle → Profil → Einstellungen → Sicherheitsschlüssel, сервис *Moodle mobile web service*.
+Token: Moodle → Profile → Preferences → Security keys, service *Moodle mobile web service*
+(details and alternatives in the [setup guide](docs/STUDENT-SETUP.md)).
 
-## Подключение к Claude Code
+## Connect to Claude Code
 
 ```bash
 claude mcp add moodle --scope user \
   -e MOODLE_URL=https://moodle.fh-joanneum.at \
-  -e MOODLE_TOKEN=<твой токен> \
-  -- /абсолютный/путь/к/moodle-mcp/bin/moodle-mcp
+  -e MOODLE_TOKEN=<your token> \
+  -- /absolute/path/to/moodle-mcp/bin/moodle-mcp
 ```
 
-Проверка: `moodle_whoami` покажет пользователя, версию сайта и каких функций не хватает.
+Check: `moodle_whoami` shows the user, the site version and any missing functions.
 
-## HTTP вместо stdio
+## HTTP instead of stdio
 
 ```bash
-MCP_HTTP_TOKEN=<секрет> ./bin/moodle-mcp -http 127.0.0.1:8765
+MCP_HTTP_TOKEN=<secret> ./bin/moodle-mcp -http 127.0.0.1:8765
 ```
 
-Эндпоинт — `http://127.0.0.1:8765/mcp` (streamable HTTP), `GET /healthz` — проверка живости.
-Защита: DNS-rebinding (запросы на localhost с чужим `Host` отклоняются), cross-origin запросы
-браузера отклоняются, с `MCP_HTTP_TOKEN` каждый запрос требует `Authorization: Bearer …`.
-Слушать не-loopback адрес (`0.0.0.0`, LAN) без токена сервер отказывается: он держит твой токен Moodle.
+The endpoint is `http://127.0.0.1:8765/mcp` (streamable HTTP); `GET /healthz` is a liveness
+check. Protection: DNS rebinding (requests to localhost with a foreign `Host` are rejected),
+browser cross-origin requests are rejected, and with `MCP_HTTP_TOKEN` every request needs
+`Authorization: Bearer …`. The server refuses to listen on a non-loopback address (`0.0.0.0`,
+LAN) without a token, because it holds your Moodle token.
 
 ```bash
-claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "Authorization: Bearer <секрет>"
+claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "Authorization: Bearer <secret>"
 ```
 
-## Инструменты
+## Tools
 
-| Инструмент | Параметры | Что делает |
+| Tool | Parameters | What it does |
 |---|---|---|
-| `moodle_deadlines` | `days=14`, `include_overdue=true`, `refresh` | Дедлайны до конца N-го дня (Вена): календарь + сроки заданий, дедупликация, статус сдачи у каждого задания, просроченные несданные за 7 дней |
-| `moodle_announcements` | `days=7`, `refresh` | Свежие посты из форумов-объявлений всех курсов |
-| `moodle_courses` | `include_past`, `refresh` | Активные курсы: id, название, даты, прогресс |
-| `moodle_course_contents` | `course`, `refresh` | Материалы курса по разделам (с подразделами Moodle 4.5) и ссылками на файлы. `course` — id или кусок названия; при неоднозначности — список кандидатов |
-| `moodle_search` | `query`, `course=""`, `in_files=false`, `refresh` | Поиск по названиям, описаниям, разделам и именам файлов во всех активных курсах (или в одном). С `in_files=true` — ещё и по тексту PDF, docx, pptx, ipynb, zip и страниц Moodle, с номерами страниц и цитатой |
-| `moodle_grades` | `course=""` | Оценки: балл, максимум, процент, фидбек; по курсу или по всем |
-| `moodle_download` | `fileurl`, `dest=""` | Скачивает файл этого Moodle, возвращает локальный путь |
-| `moodle_whoami` | — | Диагностика: пользователь, сайт, версия, доступные функции |
+| `moodle_deadlines` | `days=14`, `include_overdue=true`, `refresh` | Deadlines until the end of day N (Vienna): calendar + assignment due dates, deduplicated, submission status for every assignment, unsubmitted ones overdue by up to 7 days |
+| `moodle_announcements` | `days=7`, `refresh` | Recent posts in the announcement forums of all courses |
+| `moodle_courses` | `include_past`, `refresh` | Active courses: id, name, dates, progress |
+| `moodle_course_contents` | `course`, `refresh` | A course's material by section (incl. Moodle 4.5 subsections) with file links. `course` is an id or part of the name; ambiguous queries return candidates |
+| `moodle_search` | `query`, `course=""`, `in_files=false`, `refresh` | Search names, descriptions, sections and file names in all active courses (or one). With `in_files=true` also the text of PDF, docx, pptx, ipynb, zip and Moodle pages, with page numbers and a quote |
+| `moodle_grades` | `course=""` | Grades: score, maximum, percentage, feedback; one course or all |
+| `moodle_download` | `fileurl`, `dest=""` | Downloads a file of this Moodle and returns the local path |
+| `moodle_whoami` | — | Diagnostics: user, site, version, available functions |
 
-Вывод — компактный markdown. Даты — `2026-10-07 17:15 (среда) — через 5 дней`, Europe/Vienna.
-Ссылки на файлы — браузерные (`…/pluginfile.php/…`): открываются там, где ты залогинен в Moodle,
-токена в них нет.
+Output is compact markdown. Dates look like `2026-10-07 17:15 (Wednesday) — in 5 days`,
+Europe/Vienna. File links are browser links (`…/pluginfile.php/…`): they open where you are
+signed in to Moodle and never contain the token. Output is English; all user-facing strings go
+through a `golang.org/x/text/message` catalog, so other languages can be added later.
 
-Кэш в памяти: курсы, содержимое курсов, форумы — 15 мин; дедлайны, статусы сдачи,
-объявления — 5 мин; оценки не кэшируются; текст файлов для `in_files` — пока файл не изменился
-(URL + размер + время изменения). `refresh=true` обходит кэш.
+In-memory cache: courses, course contents and forums 15 min; deadlines, submission status and
+announcements 5 min; grades are never cached; file text for `in_files` until the file changes
+(URL + size + modification time). `refresh=true` bypasses the cache.
 
-Поиск внутри файлов: первый вызов скачивает файлы курсов в память (на реальных 8 курсах —
-18 файлов, ~4 с), дальше работает из кэша. Файлы больше 40 МБ, видео и картинки пропускаются.
-PDF читается без внешних утилит; пробелы восстанавливаются по координатам глифов, а слова от
-6 букв сопоставляются и без учёта пробелов — PDF часто теряет или вставляет их.
+Search inside files: the first call downloads the course files into memory (18 files, ~4 s for
+the real 8 courses), later calls use the cache. Files over 40 MB, videos and images are
+skipped. PDFs are read in pure Go (a vendored, patched `ledongthuc/pdf`, see
+`third_party/ledongthuc-pdf/PATCHES.md`); spaces are rebuilt from glyph positions, and words of
+6+ letters also match ignoring spaces, since PDFs often lose or invent them.
 
-## Скиллы
+## Skills
 
-Шесть скиллов для Claude Code — брифинг, поиск материалов с ответом по содержимому, разбор
-задания, оценки, визуальный дашборд и диагностика — лежат в [skills/](skills/README.md):
+Seven Claude Code skills — briefing, finding material and answering from it, working through an
+assignment, grades, a visual dashboard, course profiles from the syllabi, and diagnostics — live
+in [skills/](skills/README.md):
 
 ```bash
 make install-skills
 ```
 
-## Для одногруппников
-
-Пошаговая инструкция — получить токен, собрать, подключить к Claude Code или Claude Desktop:
-[docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md) (English) · [docs/STUDENT-SETUP.ru.md](docs/STUDENT-SETUP.ru.md) (русский).
-
-## Разработка
+## Development
 
 ```bash
 make test      # go test -race ./...
-make cover     # покрытие
-make lint      # go vet + golangci-lint v2 (через go run, ставить не нужно)
-make golden    # перезаписать эталонный вывод инструментов (testdata/golden)
-make dev       # bin/fakemoodle (фейковый Moodle) и bin/mcpcall (вызов инструмента из shell)
+make cover     # coverage
+make lint      # go vet + golangci-lint v2 (via go run, nothing to install)
+make golden    # rewrite the expected tool output (testdata/golden)
+make dev       # bin/fakemoodle (fake Moodle) and bin/mcpcall (call a tool from the shell)
 ```
 
-Проверка скиллов: `dev/skill-evals/` — набор сценариев, оценщик и описание прогона.
+Skill evals: `dev/skill-evals/` holds the prompts, the grader and how to run them.
 
-Тесты не ходят в сеть: фейковый Moodle (`internal/moodletest`) отдаёт фикстуры
-`testdata/moodle/<wsfunction>.<scenario>.json` — реальные ответы (обезличенные, `*.real*`)
-и синтетические по схемам Moodle 4.5 (`*.synthetic*`).
+Tests never touch the network: a fake Moodle (`internal/moodletest`) serves the fixtures
+`testdata/moodle/<wsfunction>.<scenario>.json` — real responses (anonymised, `*.real*`) and
+synthetic ones built from the Moodle 4.5 schemas (`*.synthetic*`).

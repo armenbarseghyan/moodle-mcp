@@ -1,3 +1,3 @@
-## Объявления за 1 день: 0
+## Announcements, last 1 day: 0
 
-Новых объявлений нет.
+No new announcements.

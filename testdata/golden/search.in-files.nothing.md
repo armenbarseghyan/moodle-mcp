@@ -1,6 +1,6 @@
-## Поиск «kubernetes» в курсе Programming and Data Processing: 0 совпадений
+## Search “kubernetes” in Programming and Data Processing: 0 matches
 
-### Внутри файлов
-Совпадений в тексте файлов нет.
+### Inside files
+No matches in the text of files.
 
-_Просмотрено файлов: 6._
+_Files searched: 6._

@@ -44,7 +44,7 @@ var ErrUnsupported = errors.New("extract: unsupported file type")
 // Part is a searchable piece of a document: a PDF page, a slide, a notebook
 // cell group, or a file inside an archive.
 type Part struct {
-	Label string // "стр. 3", "слайд 2", "lecture/index.html"; "" for single-part files
+	Label string // "p. 3", "slide 2", "lecture/index.html"; "" for single-part files
 	Text  string
 }
 
@@ -112,7 +112,7 @@ func extract(name string, data []byte, depth int) ([]Part, error) {
 	case kindDOCX:
 		return fromOOXML(data, "word/document.xml", "", "t")
 	case kindPPTX:
-		return fromOOXML(data, "ppt/slides/slide", "слайд ", "t")
+		return fromOOXML(data, "ppt/slides/slide", "slide ", "t")
 	case kindIPYNB:
 		return fromNotebook(data)
 	case kindZIP:
@@ -170,7 +170,7 @@ func fromPDF(data []byte) ([]Part, error) {
 			continue
 		}
 		if txt := Clean(pdfPageText(p)); txt != "" {
-			parts = append(parts, Part{Label: "стр. " + strconv.Itoa(i), Text: txt})
+			parts = append(parts, Part{Label: "p. " + strconv.Itoa(i), Text: txt})
 		}
 	}
 	return parts, nil
@@ -204,7 +204,7 @@ func pdfPageText(p pdf.Page) string {
 
 // fromOOXML reads the XML parts whose names start with prefix and collects
 // the character data of <*:textTag> elements. For pptx each slide becomes a
-// part labelled "слайд N"; for docx the document is one part.
+// part labelled "slide N"; for docx the document is one part.
 func fromOOXML(data []byte, prefix, label, textTag string) ([]Part, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {

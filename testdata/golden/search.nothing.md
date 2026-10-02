@@ -1,3 +1,3 @@
-## Поиск «vpn»: 0 совпадений
+## Search “vpn”: 0 matches
 
-Ничего не найдено в названиях, описаниях и именах файлов. Можно искать и внутри PDF и документов: in_files=true.
+Nothing found in names, descriptions and file names. To search inside PDFs and documents too, use in_files=true.

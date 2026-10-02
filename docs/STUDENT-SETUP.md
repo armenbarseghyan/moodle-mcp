@@ -7,8 +7,6 @@ language, things like *"what's due this week?"*, *"where is the guide for the la
 > **Read-only by design.** The server can only read your Moodle: courses, materials,
 > deadlines, grades, announcements. It cannot submit, post, enrol or change anything.
 
-Русская версия: [STUDENT-SETUP.ru.md](STUDENT-SETUP.ru.md).
-
 ---
 
 ## What you need
@@ -184,9 +182,9 @@ confirm. From then on answers about grades, assignments and priorities use these
 
 Ask Claude:
 
-- *"проверь мудл"* / *"check my moodle connection"* → shows your name, the site and whether
+- *"check my moodle connection"* → shows your name, the site and whether
   everything is available
-- *"what's due this week?"* / *"что у меня по учёбе на неделе?"*
+- *"what's due this week?"*
 - *"how do I connect to the lab VM from home?"*
 - *"what do I need to do for Homework R2?"*
 - *"how are my grades?"*

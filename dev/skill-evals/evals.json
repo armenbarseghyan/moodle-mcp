@@ -1,27 +1,27 @@
 {
   "skill_name": "moodle-skills",
-  "world": "moodletest.World: courses PDP (12308), Unix/LaTeX (12326), ML (12307); Homework R0 overdue + not submitted (30.09 09:30); Quiz LaTeX Basics (05.10 23:59, calendar only); Homework R1 submitted (07.10 17:15, graded 87.50/100, feedback 'Gute Arbeit, aber Plots beschriften.'); Homework R2 not submitted (10.10 10:00); Home Assignment Unix Shells draft (20.10 08:00); announcement 'Raumänderung morgen' (30.09, Raum 0.12, bring laptop); every PDF = DAT VM sample (p.2: 'Off campus: FH VPN required'); every zip = SSH instructions ('ssh-keygen -t ed25519', 'Off campus you need the FH VPN first').",
+  "world": "moodletest.World: courses PDP (12308), Unix/LaTeX (12326), ML (12307); Homework R0 overdue + not submitted (30.09 09:30); Quiz LaTeX Basics (05.10 23:59, calendar only); Homework R1 submitted (07.10 17:15, graded 87.50/100, feedback 'Gute Arbeit, aber Plots beschriften.'); Homework R2 not submitted (10.10 10:00); Home Assignment Unix Shells draft (20.10 08:00); announcement 'Raumänderung morgen' (30.09, Raum 0.12, bring a laptop); every PDF = DAT VM sample (p.2: 'Off campus: FH VPN required'); every zip = SSH instructions ('ssh-keygen -t ed25519', 'Off campus you need the FH VPN first').",
   "evals": [
     {
       "id": 1,
-      "name": "briefing-week-ru",
+      "name": "briefing-week-en",
       "skill": "moodle-briefing",
-      "prompt": "что у меня по учёбе на этой неделе?",
-      "expected_output": "Russian briefing: urgent first (Homework R0 overdue and not submitted), the room-change announcement with 'Raum 0.12', upcoming deadlines (Quiz 05.10, R1 submitted, R2 not submitted), browser links, no webservice/token links."
+      "prompt": "what do I have coming up at uni this week?",
+      "expected_output": "Briefing: urgent first (Homework R0 overdue and not submitted), the room-change announcement with 'Raum 0.12', upcoming deadlines (Quiz 05.10, R1 submitted, R2 not submitted), browser links, no webservice/token links."
     },
     {
       "id": 2,
-      "name": "briefing-urgent-de",
+      "name": "briefing-urgent-en",
       "skill": "moodle-briefing",
-      "prompt": "Guten Morgen! Gibt es heute etwas Dringendes in Moodle, das ich nicht verpassen darf?",
-      "expected_output": "German answer focused on urgent items: Homework R0 overdue/not submitted, the Raumänderung announcement; short."
+      "prompt": "Good morning! Is there anything urgent in Moodle today that I must not miss?",
+      "expected_output": "Short answer focused on urgent items: Homework R0 overdue/not submitted, the room-change announcement."
     },
     {
       "id": 3,
-      "name": "materials-ssh-key-ru",
+      "name": "materials-ssh-key-en",
       "skill": "moodle-materials",
-      "prompt": "как мне создать ssh ключ для gitlab? где-то в материалах курса была инструкция",
-      "expected_output": "Russian answer with the exact command from the course material (ssh-keygen -t ed25519), citing the instructions archive with a browser link."
+      "prompt": "how do I create an ssh key for gitlab? there was a guide somewhere in the course material",
+      "expected_output": "The exact command from the course material (ssh-keygen -t ed25519), citing the instructions archive with a browser link; general GitLab steps marked as not from the course."
     },
     {
       "id": 4,
@@ -32,39 +32,39 @@
     },
     {
       "id": 5,
-      "name": "assignment-r2-ru",
+      "name": "assignment-r2-en",
       "skill": "moodle-assignment",
-      "prompt": "что нужно сделать в Homework R2 по программированию и когда его сдавать? я уже сдал?",
-      "expected_output": "Russian: due 10.10 10:00, not submitted, link to the assignment; honest about the task sheet (no R2 sheet in the course) instead of inventing tasks."
+      "prompt": "what do I need to do for Homework R2 in programming and when is it due? did I submit it already?",
+      "expected_output": "Due 10.10 10:00, not submitted, link to the assignment; honest that there is no R2 task sheet yet; carries over the R1 feedback (label the plots)."
     },
     {
       "id": 6,
-      "name": "grades-feedback-ru",
+      "name": "grades-feedback-en",
       "skill": "moodle-grades",
-      "prompt": "как у меня с оценками? что написал преподаватель?",
-      "expected_output": "Russian: Homework R1 87,50/100 (87.5%), teacher feedback quoted in German and translated, 1 item not graded yet, other courses without grades; nothing invented."
+      "prompt": "how are my grades? what did the teacher write?",
+      "expected_output": "Homework R1 87.5/100, teacher feedback quoted in German and translated, 1 item not graded yet, other courses without grades; nothing invented."
     },
     {
       "id": 7,
-      "name": "dashboard-two-weeks-ru",
+      "name": "dashboard-two-weeks-en",
       "skill": "moodle-dashboard",
-      "prompt": "сделай красивый дашборд моей учёбы на ближайшие две недели",
-      "expected_output": "An HTML dashboard rendered from the template with lang=ru, urgent cards (R0 overdue), deadlines with statuses, the announcement; short Russian summary with the file path."
+      "prompt": "make a nice dashboard of my studies for the next two weeks",
+      "expected_output": "An HTML dashboard from the template with urgent cards (R0 overdue), deadlines with statuses, the announcement; a short summary with the file path."
     },
     {
       "id": 8,
-      "name": "setup-revoked-token-ru",
+      "name": "setup-revoked-token-en",
       "skill": "moodle-setup",
       "token": "revoked",
-      "prompt": "мудл перестал работать в claude, что случилось и как починить?",
-      "expected_output": "Russian diagnosis: the token is invalid/revoked (from moodle_whoami or another tool), steps to issue a new token and re-register the server; never asks to paste the token into the chat."
+      "prompt": "moodle stopped working in claude, what happened and how do I fix it?",
+      "expected_output": "Diagnosis: the token is invalid/revoked, steps to get a new token (incl. fallbacks) and re-register the server; never asks to paste the token into the chat."
     },
     {
       "id": 9,
-      "name": "profile-rules-ru",
+      "name": "profile-rules-en",
       "skill": "moodle-course-profile",
       "profiles": true,
-      "prompt": "сколько весит домашка по программированию и что там обязательно сдать, чтобы не завалить курс?",
+      "prompt": "how much is the homework worth in programming, and what do I have to pass so I don't fail the course?",
       "expected_output": "From the PDP profile: homework 30 %, four written/code assessments (R and Python) 17.5 % each that must each be passed separately; homework points carry over; syllabus link."
     }
   ]

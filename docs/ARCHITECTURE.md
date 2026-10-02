@@ -1,153 +1,153 @@
-# moodle-mcp — архитектура данных
+# moodle-mcp — data architecture
 
-Статус: согласовано 2026-10-02.
+Status: agreed 2026-10-02.
 
-## 1. Слои и правило зависимостей
+## 1. Layers and the dependency rule
 
 ```
             ┌──────────────────────────── cmd/moodle-mcp ───────────────────────────┐
             │ env → Config → moodle.Client → cached Source → study.Service →        │
-            │ tools.Register(mcp.Server) → transport (stdio; этап 2: streamable HTTP)│
+            │ tools.Register(mcp.Server) → transport (stdio; stage 2: streamable HTTP)│
             └───────────────────────────────────────────────────────────────────────┘
                                          │
-  internal/tools    MCP-адаптер: схемы входа, вызов study, ошибка → IsError-результат
+  internal/tools    MCP adapter: input schemas, call into study, error → IsError result
         │
-  internal/study    use-cases: агрегация, merge, резолв, политика ошибок.  Чистая логика.
-        │      └──► internal/render   доменные модели → markdown (без I/O)
-        │      └──► internal/textfmt  даты Vienna, «через N дней», HTML → текст
+  internal/study    use cases: aggregation, merge, resolution, error policy.  Pure logic.
+        │      └──► internal/render   domain models → markdown (no I/O)
+        │      └──► internal/textfmt  Vienna dates, "in N days", HTML → text, message printer
         ▼
-  study.Source (interface) ◄── internal/cache.Source (декоратор: TTL + singleflight)
+  study.Source (interface) ◄── internal/cache.Source (decorator: TTL + singleflight)
         ▲                               │
-        └────────── internal/moodle ◄───┘   транспорт + wire-типы + ошибки Moodle
+        └────────── internal/moodle ◄───┘   transport + wire types + Moodle errors
 ```
 
-Правила:
-- `moodle` ничего не знает о MCP, markdown и кэше. Отдаёт wire-типы (почти 1:1 с JSON).
-- `study` ничего не знает о MCP и HTTP. На вход получает `Source` и часы, возвращает доменные модели.
-- `render` — чистые функции `Model → string`. Тестируются golden-файлами.
-- `tools` — тонкий слой: 8 обработчиков по 5–10 строк. На этапе 2 меняется только `cmd/`.
+Rules:
+- `moodle` knows nothing about MCP, markdown or the cache. It returns wire types (nearly 1:1 with the JSON).
+- `study` knows nothing about MCP or HTTP. It takes a `Source` and a clock and returns domain models.
+- `render` is pure functions `Model → string`. Tested with golden files.
+- `tools` is a thin layer: 8 handlers of 5–10 lines each. In stage 2 only `cmd/` changes.
 
-> Изменение относительно первого наброска: логику я вынес из `internal/tools` в
-> `internal/study` + `internal/render`. Тогда в `tools` остаются только
-> «определения инструментов», как ты и формулировал, а логика тестируется без MCP.
+> Change from the first draft: the logic moved out of `internal/tools` into
+> `internal/study` + `internal/render`. `tools` then holds only the
+> "tool definitions", as originally intended, and the logic is tested without MCP.
 
-## 2. Получение данных (internal/moodle)
+## 2. Fetching data (internal/moodle)
 
-### 2.1 Транспорт
-- **POST** `application/x-www-form-urlencoded` на `/webservice/rest/server.php`.
-  Токен идёт в теле, а не в URL, поэтому он не попадает в `url.Error`, логи прокси и историю.
-- Массивы передаются как `courseids[0]=…&courseids[1]=…`. Для этого есть хелпер `params.IntList("courseids", ids)`.
-- `http.Client{Timeout: 20s}` для REST. Для скачивания файлов отдельный клиент: таймаут 5 мин
-  на тело ответа и 20 с на заголовки. Иначе PDF на 50 МБ никогда не скачается.
-- **Allowlist функций.** `Call` отказывает (`ErrNotAllowed`) любому `wsfunction` не из списка.
-  Тест дополнительно проверяет, что в списке нет имён по шаблону
+### 2.1 Transport
+- **POST** `application/x-www-form-urlencoded` to `/webservice/rest/server.php`.
+  The token goes in the body, not the URL, so it never ends up in `url.Error`, proxy logs or history.
+- Arrays are sent as `courseids[0]=…&courseids[1]=…`, via the helper `params.IntList("courseids", ids)`.
+- `http.Client{Timeout: 20s}` for REST. File downloads use a separate client: 5 min timeout
+  for the response body and 20 s for headers. Otherwise a 50 MB PDF would never finish.
+- **Function allowlist.** `Call` rejects (`ErrNotAllowed`) any `wsfunction` not on the list.
+  A test also checks that the list contains no names matching
   `_(submit|save|add|update|delete|create|set|send|mark|edit|remove|toggle)_`.
-- **Глобальный семафор на 5 запросов в полёте** внутри `Client`. Лимит общий для всех
-  инструментов. Если `errgroup.SetLimit(5)` стоит только внутри одного инструмента,
-  два параллельных вызова дадут 10 запросов.
+- **Global semaphore of 5 in-flight requests** inside `Client`. The limit is shared by all
+  tools. If `errgroup.SetLimit(5)` were only set inside a single tool, two parallel calls
+  would produce 10 requests.
 
-### 2.2 Ретрай
-| Ситуация | Ретрай? |
+### 2.2 Retry
+| Situation | Retry? |
 |---|---|
-| сетевая ошибка (dial, reset, EOF), кроме отмены ctx | 1 раз |
-| HTTP 5xx | 1 раз |
-| таймаут 20 с | 1 раз (новый дедлайн) |
-| HTTP 4xx, Moodle exception, ошибка декодирования | нет |
-| `ctx.Done()` | нет, сразу `ctx.Err()` |
+| network error (dial, reset, EOF), except ctx cancellation | once |
+| HTTP 5xx | once |
+| 20 s timeout | once (new deadline) |
+| HTTP 4xx, Moodle exception, decoding error | no |
+| `ctx.Done()` | no, return `ctx.Err()` immediately |
 
-Бэкофф: 300 мс ± 30 % джиттера, задаётся в `Config.RetryDelay` (в тестах 0).
+Backoff: 300 ms ± 30 % jitter, set via `Config.RetryDelay` (0 in tests).
 
-### 2.3 Декодирование ответа
-1. Тело читается целиком с лимитом 32 МБ (`io.LimitReader`).
-2. Если тело не начинается с `{` или `[` (а это HTML-страница обслуживания или
-   ответ прокси), возвращается `ErrUnexpectedResponse` с первыми 200 символами тела после redact.
-3. Если это объект, сначала пробный разбор в `struct{Exception, ErrorCode, Message, DebugInfo *string}`.
-   Если `exception != nil`, возвращается `*moodle.Error`.
-4. Иначе `json.Unmarshal(body, out)`.
+### 2.3 Response decoding
+1. The body is read in full with a 32 MB limit (`io.LimitReader`).
+2. If the body does not start with `{` or `[` (a maintenance HTML page or a
+   proxy response), `ErrUnexpectedResponse` is returned with the first 200 characters of the body after redaction.
+3. If it is an object, it is first trial-decoded into `struct{Exception, ErrorCode, Message, DebugInfo *string}`.
+   If `exception != nil`, a `*moodle.Error` is returned.
+4. Otherwise `json.Unmarshal(body, out)`.
 
-### 2.4 Классификация ошибок (по `errorcode`, сообщения у нас на немецком)
-| errorcode | sentinel | что видит пользователь | фатальна для запроса* |
+### 2.4 Error classification (by `errorcode`; the site's messages are in German)
+| errorcode | sentinel | what the user sees | fatal for the request* |
 |---|---|---|---|
-| `invalidtoken` | `ErrInvalidToken` | «Токен Moodle недействителен или отозван. Создай новый: Profil → Sicherheitsschlüssel, обнови MOODLE_TOKEN.» | да |
-| `accessexception` | `ErrAccessDenied` | «Функция X недоступна для сервиса moodle_mobile_app (access control).» | да |
-| `requireloginerror` | `ErrNotAccessible` | «Курс/активность недоступны (скрыты или ограничены).» | нет |
-| `sitemaintenance` | `ErrMaintenance` | «Moodle на обслуживании.» | да |
-| прочие | `*Error` | `moodle: <fn>: <errorcode>: <message>` | нет |
+| `invalidtoken` | `ErrInvalidToken` | "The Moodle token is invalid or revoked. Create a new one: Profil → "Sicherheitsschlüssel" (security keys), update MOODLE_TOKEN." | yes |
+| `accessexception` | `ErrAccessDenied` | "Function X is not available to the moodle_mobile_app service (access control)." | yes |
+| `requireloginerror` | `ErrNotAccessible` | "The course or activity is not accessible (hidden or restricted)." | no |
+| `sitemaintenance` | `ErrMaintenance` | "Moodle is in maintenance mode." | yes |
+| other | `*Error` | `moodle: <fn>: <errorcode>: <message>` | no |
 
-\* «Фатальна» значит, что fan-out прерывается (`errgroup` отменяет контекст) и инструмент
-возвращает одну ошибку. Нефатальная ошибка по одному курсу превращается в строку
-«⚠ курс X: недоступен» в выводе, остальные курсы показываются.
-Хелпер: `moodle.IsFatal(err) bool`.
+\* "Fatal" means the fan-out is aborted (`errgroup` cancels the context) and the tool
+returns a single error. A non-fatal error for one course becomes a line
+"⚠ course X: not accessible" in the output; the other courses are still shown.
+Helper: `moodle.IsFatal(err) bool`.
 
-`*Error` реализует `Is(target)`, поэтому работает `errors.Is(err, moodle.ErrInvalidToken)`.
+`*Error` implements `Is(target)`, so `errors.Is(err, moodle.ErrInvalidToken)` works.
 
-### 2.5 Wire-типы
-- Объявляются **только поля, которые мы используем**. Остальные игнорируются. Так wire-тип
-  одновременно служит контрактом: видно, на что мы опираемся.
-- Moodle непоследователен в типах. Пример из реальных ответов:
-  `visible: 1`, а в соседнем поле `hidden: false`; `progress: null`; `lastaccess` бывает пустым. Поэтому:
-  - `moodle.Bool` принимает `true/false/0/1/"0"/"1"/null`;
-  - `moodle.Time` принимает unix-секунды; `0` и `null` дают нулевое время (`IsZero()`);
-  - `*float64` для `progress`, `graderaw`.
-- Предупреждения (`warnings[]`) не теряются: методы возвращают их вторым значением.
+### 2.5 Wire types
+- **Only the fields we use** are declared. The rest are ignored. The wire type thus
+  doubles as a contract: it shows what we rely on.
+- Moodle is inconsistent with types. Examples from real responses:
+  `visible: 1` next to `hidden: false`; `progress: null`; `lastaccess` may be empty. Hence:
+  - `moodle.Bool` accepts `true/false/0/1/"0"/"1"/null`;
+  - `moodle.Time` accepts unix seconds; `0` and `null` give the zero time (`IsZero()`);
+  - `*float64` for `progress`, `graderaw`.
+- Warnings (`warnings[]`) are not lost: methods return them as a second value.
 
-### 2.6 Методы клиента
+### 2.6 Client methods
 ```go
 SiteInfo(ctx) (*SiteInfo, error)
 UserCourses(ctx, userID) ([]Course, error)
 CourseContents(ctx, courseID) ([]Section, error)
-ActionEvents(ctx, from, to time.Time) ([]Event, error)          // пагинация aftereventid, limitnum=50
-Assignments(ctx, courseIDs []int) ([]CourseAssignments, []Warning, error)  // ОДИН вызов на все курсы
+ActionEvents(ctx, from, to time.Time) ([]Event, error)          // pagination via aftereventid, limitnum=50
+Assignments(ctx, courseIDs []int) ([]CourseAssignments, []Warning, error)  // ONE call for all courses
 SubmissionStatus(ctx, assignID) (*SubmissionStatus, error)
 GradeItems(ctx, courseID, userID) ([]GradeItem, error)
-Forums(ctx, courseIDs []int) ([]Forum, error)                    // один вызов на все курсы
+Forums(ctx, courseIDs []int) ([]Forum, error)                    // one call for all courses
 Discussions(ctx, forumID, perPage) ([]Discussion, error)         // sortorder=3 (CREATED_DESC), page=0
 Download(ctx, fileURL, dest string) (Downloaded, error)
 ```
 
-## 3. Кэш (internal/cache)
+## 3. Cache (internal/cache)
 
-- Кэшируются **данные из Moodle, а не готовый текст**. Рендер выполняется на каждый вызов,
-  поэтому «через 4 дня» всегда считается от текущего момента.
-- Реализован как декоратор `cache.Source`, который реализует `study.Source` поверх `moodle.Client`.
-- Generic-ядро: `TTL[K,V]` с подменяемыми часами и `singleflight` на ключ: 5 параллельных
-  запросов одного курса дают один HTTP-вызов. Ошибки не кэшируются.
-- Обход кэша: `refresh=true` загружает данные заново и **перезаписывает** запись (а не просто читает мимо кэша).
+- **Moodle data is cached, not rendered text.** Rendering runs on every call,
+  so "in 4 days" is always computed from the current moment.
+- Implemented as the decorator `cache.Source`, which implements `study.Source` on top of `moodle.Client`.
+- Generic core: `TTL[K,V]` with a replaceable clock and per-key `singleflight`: 5 parallel
+  requests for the same course produce one HTTP call. Errors are not cached.
+- Cache bypass: `refresh=true` reloads the data and **overwrites** the entry (rather than just reading past the cache).
 
-| Ключ | TTL |
+| Key | TTL |
 |---|---|
-| `siteinfo` | до конца жизни процесса (нужен userid), повтор при ошибке |
-| `courses` | 15 мин |
-| `contents:<courseid>` | 15 мин |
-| `forums:<sorted ids>` | 15 мин |
-| `events:<from-day>:<to-day>` | 5 мин |
-| `assignments:<sorted ids>` | 5 мин |
-| `subst:<assignid>` | 5 мин |
-| `discussions:<forumid>` | 5 мин |
-| оценки | **не кэшируются**: всегда свежий запрос |
+| `siteinfo` | process lifetime (userid is needed), retried on error |
+| `courses` | 15 min |
+| `contents:<courseid>` | 15 min |
+| `forums:<sorted ids>` | 15 min |
+| `events:<from-day>:<to-day>` | 5 min |
+| `assignments:<sorted ids>` | 5 min |
+| `subst:<assignid>` | 5 min |
+| `discussions:<forumid>` | 5 min |
+| grades | **not cached**: always a fresh request |
 
-`study` получает от `Source` метку `FetchedAt`. Если данные старше 1 мин, render добавляет
-в конец вывода строку «_данные из кэша, 7 мин назад_», чтобы было понятно, когда нужен `refresh`.
+`study` receives a `FetchedAt` timestamp from `Source`. If the data is older than 1 min, render appends
+a line such as "_Cached data from 7 min ago; use refresh=true for fresh data._" so it is clear when `refresh` is needed.
 
-## 4. Доменные модели (internal/study)
+## 4. Domain models (internal/study)
 
-Все времена хранятся как `time.Time` в Europe/Vienna, строки уже без HTML, пустое
-означает «не выводить».
+All times are stored as `time.Time` in Europe/Vienna, strings are already free of HTML, empty
+means "do not output".
 
 ```go
-type Course struct { ID int; Name, Short string /* Short="" если совпадает с Name */
+type Course struct { ID int; Name, Short string /* Short="" if equal to Name */
     Start, End time.Time; Progress *float64; Past bool; URL string }
 
-type Section struct { Num int; Name, Summary string; Items []Item; Hidden int /* кол-во скрытых */ }
-type Item struct { CMID int; Kind, Name, Description, URL string; Files []File; Sub *Section /* подсекция */ }
-type File struct { Name, URL string /* браузерный URL: /pluginfile.php/… без /webservice и без токена */; Size int64; MIME string }
+type Section struct { Num int; Name, Summary string; Items []Item; Hidden int /* number of hidden items */ }
+type Item struct { CMID int; Kind, Name, Description, URL string; Files []File; Sub *Section /* subsection */ }
+type File struct { Name, URL string /* browser URL: /pluginfile.php/… without /webservice and without token */; Size int64; MIME string }
 
 type Deadline struct {
-    Key      DeadlineKey   // {Module string; Instance int}: ключ дедупликации
+    Key      DeadlineKey   // {Module string; Instance int}: deduplication key
     Course   CourseRef
     Title, Kind, URL string
-    Due      time.Time     // итоговый срок после всех правил
-    Sources  SourceSet     // calendar | assign (для отладки и тестов)
+    Due      time.Time     // final due date after all rules
+    Sources  SourceSet     // calendar | assign (for debugging and tests)
     Status   Submission    // Unknown | NotSubmitted | Draft | Submitted | Reopened | NotApplicable
     Overdue  bool
 }
@@ -157,215 +157,227 @@ type Announcement struct { Course CourseRef; Subject, Author, Text, URL string; 
 type Hit struct { Course CourseRef; SectionPath []string; Item Item; Field MatchField; Snippet string }
 ```
 
-## 5. Потоки данных по инструментам
+## 5. Data flow per tool
 
-Общий шаг почти везде: `activeCourses()` = `Source.Courses()` → фильтр `!Past`.
-Правило Past: `hidden || completed || (!End.IsZero() && End < now)`.
+Common step almost everywhere: `activeCourses()` = `Source.Courses()` → filter `!Past`.
+Past rule: `hidden || completed || (!End.IsZero() && End < now)`.
 
 ### moodle_courses(include_past, refresh)
-`Courses` → фильтр → сортировка по Name → render.
+`Courses` → filter → sort by Name → render.
 
 ### moodle_deadlines(days=14, include_overdue=true, refresh)
 ```
-window = [now, конец дня (now + days) по Vienna]
-overdueWindow = [now − 7д, now)                       ← только для НЕсданных assign
-        ┌─ ActionEvents(window.from − 7д, window.to) ──┐
+window = [now, end of day (now + days) in Vienna]
+overdueWindow = [now − 7d, now)                       ← only for NOT submitted assign
+        ┌─ ActionEvents(window.from − 7d, window.to) ──┐
 parallel┤                                              ├→ Merge → [assign: SubmissionStatus ×N (≤5)] → filter → sort → render
-        └─ Assignments(activeIDs)  (один вызов) ───────┘
+        └─ Assignments(activeIDs)  (one call) ─────────┘
 ```
-Правила merge (ключ `(modulename, instance)`; у assign `instance == assignment.id`):
-1. Событие календаря и задание с тем же ключом дают одну запись. Название и URL берутся из
-   календаря (оно учитывает overrides), курс из задания.
-2. **Срок**: `extensionduedate` из статуса сдачи > `timesort` календаря > `duedate` задания.
-   Календарь учитывает индивидуальные overrides, поэтому он приоритетнее `duedate`.
-3. Задание **без события** сохраняется. Это важно: action-event у assign пропадает после
-   сдачи, и без второго источника сданное задание просто исчезло бы из списка.
-4. `duedate == 0` (срока нет) — не дедлайн, выбрасывается.
-5. Не-assign события (quiz, choice, …) получают статус `NotApplicable`, сабмишен для них не запрашивается.
-6. `warnings` «No access rights» превращаются в сноску «ещё N заданий скрыты/недоступны».
+Merge rules (key `(modulename, instance)`; for assign `instance == assignment.id`):
+1. A calendar event and an assignment with the same key produce one entry. Title and URL come from
+   the calendar (it accounts for overrides), the course from the assignment.
+2. **Due date**: `extensionduedate` from the submission status > calendar `timesort` > assignment `duedate`.
+   The calendar accounts for individual overrides, so it takes precedence over `duedate`.
+3. An assignment **without an event** is kept. This matters: the assign action event disappears after
+   submission, and without the second source a submitted assignment would simply vanish from the list.
+4. `duedate == 0` (no due date) is not a deadline and is dropped.
+5. Non-assign events (quiz, choice, …) get status `NotApplicable`; no submission is requested for them.
+6. "No access rights" `warnings` become a footnote "Hidden or not yet available: N assignments."
 
-Статус: `lastattempt.submission` (или `teamsubmission`, если включены командные сдачи) → `status`:
-`new`→«не сдано», `draft`→«черновик, не отправлен!», `submitted`→«сдано», `reopened`→«переоткрыто».
-Если `graded` — «сдано, оценено».
+Status: `lastattempt.submission` (or `teamsubmission` if team submissions are enabled) → `status`:
+`new`→"❌ not submitted", `draft`→"📝 draft, not submitted", `submitted`→"✅ submitted", `reopened`→"↩️ reopened, submit again".
+If `graded` — "✅ submitted, graded".
 
-Сортировка: `Due`, затем курс, затем название. Просроченные идут отдельным блоком сверху.
+Sorting: `Due`, then course, then title. Overdue items form a separate block at the top.
 
 ### moodle_course_contents(course, refresh)
 `ResolveCourse(q)` → `CourseContents(id)` → `BuildTree`:
-- Секции с `component == "mod_subsection"` удаляются из верхнего уровня и подвешиваются к
-  модулю-подсекции по `module.customdata.sectionid == section.id` (проверено на реальном курсе 12326).
-- `uservisible == false` → `Section.Hidden++`, модуль не выводится.
-- Пустые секции (нет видимых модулей и summary) не выводятся.
-- `label` выводится как текст (очищенный, до 200 символов).
+- Sections with `component == "mod_subsection"` are removed from the top level and attached to the
+  subsection module via `module.customdata.sectionid == section.id` (verified on real course 12326).
+- `uservisible == false` → `Section.Hidden++`, the module is not output.
+- Empty sections (no visible modules and no summary) are not output.
+- `label` is output as text (cleaned, up to 200 characters).
 
-**ResolveCourse(q)**: `q` целиком из цифр → точный ID (только среди своих курсов) →
-нормализованное совпадение имени целиком → подстрока → все токены q как подстроки.
-На первом шаге, давшем ровно 1 результат, — возврат. Если результатов >1, `*AmbiguousError{Candidates}`
-(render покажет список с id). Если 0 — `*NotFoundError` со списком всех активных курсов.
-Сначала поиск идёт по активным курсам, при 0 совпадений — по прошлым (с пометкой).
-Нормализация: lower, NFD без диакритики, `ß→ss`, `ä→a` (и `ae→a`, чтобы «Pruefung» нашла «Prüfung»), схлопывание пробелов.
+**ResolveCourse(q)**: `q` all digits → exact ID (only among the user's own courses) →
+normalized full-name match → substring → all tokens of q as substrings.
+The first step that yields exactly 1 result returns. More than 1 result gives `*AmbiguousError{Candidates}`
+(render shows the list with ids). 0 gives `*NotFoundError` with the list of all active courses.
+Active courses are searched first; with 0 matches, past courses are searched (and marked as such).
+Normalization: lower case, NFD without diacritics, `ß→ss`, `ä→a` (and `ae→a`, so that "Pruefung" finds "Prüfung"), whitespace collapsed.
 
 ### moodle_search(query, refresh)
-`activeCourses` → `CourseContents ×N` (errgroup ≤5, кэш) → плоский индекс → матч.
-Поля и вес: имя модуля 3, имя файла 2, имя секции 1, описание 1. Все токены запроса
-должны встретиться (AND). Топ-20, затем «ещё N совпадений, уточни запрос».
+`activeCourses` → `CourseContents ×N` (errgroup ≤5, cached) → flat index → match.
+Fields and weights: module name 3, file name 2, section name 1, description 1. All query tokens
+must occur (AND). Top 20, then "N more matches, narrow the query".
 
 ### moodle_grades(course="")
-Один курс: `GradeItems(id, userid)`. Все курсы: fan-out ≤5.
-- `gradeishidden` → пропуск.
-- **Процент считаем сами**: `(graderaw − grademin)/(grademax − grademin)`. `percentageformatted`
-  локализован («87,50 %») и для шкал бывает пустым.
-- `Display = gradeformatted` (подходит и для шкал/букв). «-» означает «не оценено».
-- Курс, где нет ни одной оценки и ни одного фидбека, сворачивается в «оценок пока нет» одной строкой.
-- Итог курса (`itemtype=course`) выводится последней строкой.
+One course: `GradeItems(id, userid)`. All courses: fan-out ≤5.
+- `gradeishidden` → skipped.
+- **The percentage is computed by us**: `(graderaw − grademin)/(grademax − grademin)`, and printed
+  with a decimal dot (`87.5%`). `percentageformatted` is localized by the site ("87,50 %") and is empty for scales.
+- `Display = gradeformatted` (works for scales/letters too) and keeps the site's own notation. "-" means "not graded".
+- A course with no grades and no feedback at all collapses into a single line "no grades yet".
+- The course total (`itemtype=course`) is output as the last line.
 
 ### moodle_announcements(days=7, refresh)
 `Forums(activeIDs)` → `type == "news"` → `Discussions(forumid, perPage=10)` ×N (≤5)
-→ `created ≥ now − days` (или `modified`, если пост редактировали) → сортировка по убыванию → render.
-Текст: StripHTML, обрезка до 1500 символов + «… [полностью](url)». Закреплённые помечаются 📌.
+→ `created ≥ now − days` (or `modified` if the post was edited) → sort descending → render.
+Text: StripHTML, truncated to 1500 characters + "… [in full](url)". Pinned posts are marked 📌.
 URL: `/mod/forum/discuss.php?d=<discussion>`.
 
 ### moodle_download(fileurl, dest="")
 ```
-parse → host == host(MOODLE_URL)? иначе ОТКАЗ (токен никогда не уходит на чужой хост)
-      → path содержит /pluginfile.php/ ? иначе отказ
-      → /pluginfile.php/… → /webservice/pluginfile.php/…  (уже webservice — без изменений)
-      → удалить token из query, если он был; добавить свой
-      → GET (отдельный клиент) → статус 200? JSON-тело → разбор как ошибки Moodle
-      → имя: Content-Disposition → последний сегмент пути (url-decode) → sanitize
-      → запись во временный файл в dest → fsync → rename (атомарно, без битых файлов)
+parse → host == host(MOODLE_URL)? otherwise REFUSE (the token never goes to a foreign host)
+      → path contains /pluginfile.php/ ? otherwise refuse
+      → /pluginfile.php/… → /webservice/pluginfile.php/…  (already webservice — unchanged)
+      → remove token from the query if present; add our own
+      → GET (separate client) → status 200? JSON body → parse as a Moodle error
+      → name: Content-Disposition → last path segment (url-decoded) → sanitize
+      → write to a temp file in dest → fsync → rename (atomic, no broken files)
 ```
-- `dest`: пусто → `$MOODLE_DOWNLOAD_DIR` или `~/Downloads/moodle`. Если `dest` — существующая
-  папка или кончается на `/`, файл кладётся внутрь. Иначе `dest` считается полным путём файла.
-- Если файл уже существует: при совпадении размера и `Last-Modified` возвращаем «уже скачан»,
-  иначе пишем в `name (1).ext`.
-- sanitize: только базовое имя, без `..`, `/`, управляющих символов, длина ≤ 200.
-- Возврат: локальный путь + размер. URL в ответе всегда без токена.
+- `dest`: empty → `$MOODLE_DOWNLOAD_DIR` or `~/Downloads/moodle`. If `dest` is an existing
+  directory or ends with `/`, the file is placed inside it. Otherwise `dest` is treated as the full file path.
+- If the file already exists: when size and `Last-Modified` match, "already downloaded" is returned;
+  otherwise the file is written as `name (1).ext`.
+- sanitize: base name only, no `..`, `/`, control characters, length ≤ 200.
+- Returns: local path + size (B/KB/MB). The URL in the response never contains the token.
 
 ### moodle_whoami()
-`SiteInfo` → имя, логин, сайт, версия, число функций. Плюс **проверка: какие из
-функций, нужных серверу, отсутствуют**. Это первый инструмент для диагностики.
+`SiteInfo` → name, login, site, version, number of functions. Plus a **check of which
+functions the server needs are missing**. This is the first tool for diagnostics.
 
-## 6. Время и текст (internal/textfmt)
+## 6. Time and text (internal/textfmt)
 
-- `Vienna` загружается через `time.LoadLocation`. В бинарник встраивается `time/tzdata`, чтобы
-  он не зависел от системной базы часовых поясов.
-- `Date(t)` → `2026-10-07 17:15 (среда)`.
-- `Relative(t, now)` считается по **календарным дням в Vienna**, а не по 24 ч:
-  менее 1 ч → «через 40 мин», в тот же день → «сегодня, через 3 ч», 1 день → «завтра»,
-  N дней → «через N дн.» с правильным склонением (1 день / 2–4 дня / 5–20 дней / 21 день).
-  В прошлом: «вчера», «3 дня назад».
-  Переход на зимнее время 25.10.2026 входит в тест-кейсы.
-- `StripHTML` использует токенизатор `golang.org/x/net/html`, а не regex:
-  блочные теги и `<br>` → перевод строки, `<li>` → «- », entities декодируются, `&nbsp;` → пробел,
-  пробелы схлопываются, `<script>/<style>` удаляются целиком. Moodle multilang
-  (`<span lang="xx" class="multilang">`): берётся `de`, если есть, иначе первый вариант.
-- `Truncate(s, n)` режет по рунам, а не по байтам, с «…».
+- `Vienna` is loaded via `time.LoadLocation`. `time/tzdata` is embedded in the binary so
+  it does not depend on the system time zone database.
+- `Date(t)` → `2026-10-07 17:15 (Wednesday)`.
+- `Relative(t, now)` counts **calendar days in Vienna**, not 24 h periods:
+  under 1 h → "in 40 min", same day → "today, in 3 h", 1 day → "tomorrow",
+  N days → "in N days" (singular "in 1 day" via the plural rules below).
+  In the past: "yesterday", "3 days ago".
+  The switch to winter time on 2026-10-25 is part of the test cases.
+- **Output language and the message printer** (`lang.go`). All user-facing text is English and is
+  printed through a `golang.org/x/text/message` printer: `textfmt.P()` returns it, `SetLanguage(tag)`
+  selects the language (English by default). The English source strings are the catalog keys.
+  Counted phrases ("in %d days", "%d days ago", "%d matches", "%d assignments", …) are registered
+  with CLDR plural forms, so English gets "1 day" / "2 days". Another language is added by
+  registering a catalog for the same keys and calling `SetLanguage`, without touching output code.
+  Identifiers such as course ids are passed as strings so the printer does not localize them as numbers
+  (no digit grouping).
+- `StripHTML` uses the `golang.org/x/net/html` tokenizer, not a regex:
+  block tags and `<br>` → newline, `<li>` → "- ", entities are decoded, `&nbsp;` → space,
+  whitespace is collapsed, `<script>/<style>` are removed entirely. Moodle multilang
+  (`<span lang="xx" class="multilang">`): `de` is taken if present, otherwise the first variant.
+- `Truncate(s, n)` cuts by runes, not bytes, and appends "…".
 
-## 7. Формат вывода (internal/render)
+## 7. Output format (internal/render)
 
-Общие правила: markdown; у каждой сущности ID, чтобы модель могла сделать следующий вызов;
-пустые поля не выводятся; никаких unix-времён; лимит около 12 000 символов на ответ с хвостом «… ещё N».
+General rules: markdown; every entity has an ID so the model can make the next call;
+empty fields are not output; no unix timestamps; a limit of about 12,000 characters per response with a tail
+"… N more lines not shown — narrow the request.". All text goes through `textfmt.P()` (section 6), so
+the output is English and counted phrases use the correct plural form. Percentages computed by the
+server use a decimal dot (`87.5%`); grades formatted by Moodle keep the site's notation.
+File sizes are shown as B/KB/MB; search hits inside files cite "p. N" (PDF pages) or "slide N" (pptx).
 
 ```markdown
-## Дедлайны: 14 дней (до 2026-10-16)
+## Deadlines until 2026-10-16 (14 days)
 
-**Просрочено**
-- ❌ 2026-09-30 23:59 (среда) — 2 дня назад · Programming and Data Processing · [Homework R0](…) · assign · не сдано
+**Overdue and not submitted**
+- 2026-09-30 23:59 (Wednesday) — 2 days ago · Programming and Data Processing · [Homework R0](…) · assignment · ❌ not submitted
 
-- 2026-10-05 23:59 (понедельник) — через 3 дня · Refresher on Unix Shells and LaTeX · [Quiz LaTeX Basics](…) · quiz
-- 2026-10-07 17:15 (среда) — через 5 дней · Programming and Data Processing · [Homework R1](…) · assign · ✅ сдано
-- 2026-10-10 10:00 (суббота) — через 8 дней · Programming and Data Processing · [Homework R2](…) · assign · ❌ не сдано
+- 2026-10-05 23:59 (Monday) — in 3 days · Refresher on Unix Shells and LaTeX · [Quiz LaTeX Basics](…) · quiz
+- 2026-10-07 17:15 (Wednesday) — in 5 days · Programming and Data Processing · [Homework R1](…) · assignment · ✅ submitted
+- 2026-10-10 10:00 (Saturday) — in 8 days · Programming and Data Processing · [Homework R2](…) · assignment · ❌ not submitted
 
-_Ещё 1 задание скрыто или недоступно._
+_Hidden or not yet available: 1 assignment._
 ```
 
-Префикс `(DAT_WS2026_1)` повторяется во всех курсах, поэтому в списках убирается **общий
-префикс всех курсов** (алгоритм, а не захардкоженная строка). В `moodle_courses`
-выводится полное имя.
+The prefix `(DAT_WS2026_1)` repeats across all courses, so lists strip the **common
+prefix of all courses** (an algorithm, not a hardcoded string). `moodle_courses`
+shows the full name.
 
-### Ссылки на файлы
-Основной способ работы с материалами — **ссылка, которую пользователь открывает в браузере**
-(он залогинен в Moodle). Поэтому во всём выводе:
-- у модуля ссылка на страницу `…/mod/<type>/view.php?id=<cmid>`;
-- у файла **браузерная** ссылка `…/pluginfile.php/…`: `/webservice/` убирается, `forcedownload`
-  убирается (PDF откроется во вкладке), токена нет никогда;
-- `moodle_download` остаётся для случаев, когда файл нужен локально (например, прочитать его
-  содержимое); он принимает обе формы ссылки.
+### File links
+The main way to work with materials is **a link the user opens in the browser**
+(they are logged in to Moodle). So throughout the output:
+- a module links to its page `…/mod/<type>/view.php?id=<cmid>`;
+- a file has a **browser** link `…/pluginfile.php/…`: `/webservice/` is removed, `forcedownload`
+  is removed (a PDF opens in a tab), and there is never a token;
+- `moodle_download` remains for cases where the file is needed locally (for example, to read its
+  contents); it accepts both link forms.
 
-## 8. Ошибки на границе MCP
+## 8. Errors at the MCP boundary
 
-- Ошибки из `study` возвращаются как `CallToolResult{IsError: true, Content: [текст]}`,
-  а не как protocol error. Так модель видит человеческую причину и может среагировать
-  (например, предложить обновить токен).
-- `AmbiguousError` — не ошибка: это нормальный результат со списком кандидатов.
-- Все тексты ошибок проходят через `Redact`.
+- Errors from `study` are returned as `CallToolResult{IsError: true, Content: [text]}`,
+  not as a protocol error. This way the model sees a human-readable reason and can react
+  (for example, suggest renewing the token).
+- `AmbiguousError` is not an error: it is a normal result with a list of candidates.
+- All error texts pass through `Redact`.
 
-## 9. Безопасность и логи
+## 9. Security and logs
 
-- Токен существует только в `moodle.Client` (неэкспортируемое поле) и в одном месте сборки URL скачивания.
-- `Redact(s)` заменяет токен и в сыром виде, и в URL-encoded. Применяется: в slog-хендлере
-  (каждый атрибут), к текстам ошибок, к ответу download, к ErrUnexpectedResponse.
-- `url.Error` от download содержит URL с токеном, поэтому оборачивается до возврата наверх.
-- Логи: `slog` в stderr; поля `fn, attempt, status, dur_ms, cache=hit|miss|refresh, bytes`.
-  Параметры запросов не логируются. Уровень задаётся через `MOODLE_LOG_LEVEL` (по умолчанию info).
-- Stdout занят протоколом MCP. Ни одного `fmt.Print` в коде — это проверяет линтер `forbidigo`.
+- The token exists only in `moodle.Client` (unexported field) and in one place that builds the download URL.
+- `Redact(s)` replaces the token both raw and URL-encoded. Applied in: the slog handler
+  (every attribute), error texts, the download response, ErrUnexpectedResponse.
+- A `url.Error` from download contains the URL with the token, so it is wrapped before being returned upward.
+- Logs: `slog` to stderr; fields `fn, attempt, status, dur_ms, cache=hit|miss|refresh, bytes`.
+  Request parameters are not logged. The level is set via `MOODLE_LOG_LEVEL` (default info).
+- Stdout is used by the MCP protocol. There is not a single `fmt.Print` in the code — enforced by the `forbidigo` linter.
 
-## 10. Конфигурация и старт
+## 10. Configuration and startup
 
-| env | обязат. | по умолчанию |
+| env | required | default |
 |---|---|---|
-| `MOODLE_URL` | да | — |
-| `MOODLE_TOKEN` | да | — |
-| `MOODLE_DOWNLOAD_DIR` | нет | `~/Downloads/moodle` |
-| `MOODLE_LOG_LEVEL` | нет | `info` |
+| `MOODLE_URL` | yes | — |
+| `MOODLE_TOKEN` | yes | — |
+| `MOODLE_DOWNLOAD_DIR` | no | `~/Downloads/moodle` |
+| `MOODLE_LOG_LEVEL` | no | `info` |
 
-При старте Moodle **не вызывается**: проверяется только наличие env и корректность URL.
-Если упасть на старте, Claude Code покажет лишь «Connection closed» (как сейчас).
-Лучше стартовать и вернуть понятную ошибку из первого же инструмента.
-Версия задаётся через `-ldflags "-X main.version=…"`.
+Moodle is **not called** at startup: only the presence of env vars and URL validity are checked.
+If the server failed at startup, Claude Code would only show "Connection closed".
+It is better to start and return a clear error from the first tool call.
+The version is set via `-ldflags "-X main.version=…"`.
 
-## 11. Файлы
+## 11. Files
 
 ```
-cmd/moodle-mcp/main.go            env, сборка графа, stdio
+cmd/moodle-mcp/main.go            env, graph assembly, stdio
 internal/moodle/
-  client.go        Config, New, Call, ретрай, семафор, allowlist
-  errors.go        Error, sentinels, IsFatal, классификация
-  decode.go        Bool, Time, разбор exception
-  types.go         wire-типы
-  api.go           типизированные методы
-  download.go      ToWebserviceURL, Download, sanitize, атомарная запись
+  client.go        Config, New, Call, retry, semaphore, allowlist
+  errors.go        Error, sentinels, IsFatal, classification
+  decode.go        Bool, Time, exception parsing
+  types.go         wire types
+  api.go           typed methods
+  download.go      ToWebserviceURL, Download, sanitize, atomic write
   redact.go        Redact, RedactingHandler
-  allowlist.go     список функций
+  allowlist.go     function list
 internal/cache/
   ttl.go           TTL[K,V] + singleflight
-  source.go        декоратор study.Source
+  source.go        study.Source decorator
 internal/study/
   source.go        interface Source
   service.go       Service, New, activeCourses, fan-out helper
-  model.go         доменные модели
+  model.go         domain models
   resolve.go       ResolveCourse, normalize
-  deadlines.go     Merge, статус, окна
+  deadlines.go     Merge, status, windows
   contents.go      BuildTree
-  search.go        индекс и ранжирование
+  search.go        index and ranking
   grades.go  announcements.go  download.go  whoami.go
-internal/render/   по файлу на инструмент + common.go (лимит, префикс курсов)
-internal/textfmt/  date.go relative.go html.go
-internal/tools/    register.go (AddTool ×8), inputs.go (структуры входа с jsonschema-тегами)
-testdata/moodle/<wsfunction>.<scenario>.json   фикстуры ответов
-testdata/errors/<errorcode>.json               фикстуры ошибок
-testdata/golden/<tool>.<scenario>.md           ожидаемый вывод
+internal/render/   one file per tool + common.go (limit, course prefix)
+internal/textfmt/  date.go (Date, Relative) html.go lang.go (P, SetLanguage, plurals)
+internal/tools/    register.go (AddTool ×8), inputs.go (input structs with jsonschema tags)
+testdata/moodle/<wsfunction>.<scenario>.json   response fixtures
+testdata/errors/<errorcode>.json               error fixtures
+testdata/golden/<tool>.<scenario>.md           expected output
 docs/  Makefile  README.md  .gitignore  .golangci.yml
 ```
 
-## 12. Тесты
+## 12. Tests
 
-**Конвенции.** Табличные тесты `[]struct{name; …}` + `t.Run`, `t.Parallel()` везде, где нет
-глобального состояния. Всё запускается с `-race`. Ни одного сетевого вызова: базовый URL
-всегда берётся у `httptest.Server`.
+**Conventions.** Table tests `[]struct{name; …}` + `t.Run`, `t.Parallel()` wherever there is no
+global state. Everything runs with `-race`. No network calls at all: the base URL
+always comes from `httptest.Server`.
 
-**Фейковый Moodle** (`internal/moodletest`):
+**Fake Moodle** (`internal/moodletest`):
 ```go
 srv := moodletest.New(t,
     moodletest.Fixture("core_enrol_get_users_courses", "real"),
@@ -374,59 +386,61 @@ srv := moodletest.New(t,
     }),
     moodletest.Sequence("core_course_get_contents", moodletest.HTTP(502), moodletest.File("real-12308")),
 )
-srv.Calls("core_course_get_contents")   // счётчик для проверки кэша и singleflight
-srv.Requests()                          // полные запросы: метод, токен в теле, а не в URL
+srv.Calls("core_course_get_contents")   // counter for checking cache and singleflight
+srv.Requests()                          // full requests: method, token in the body rather than the URL
 ```
-Фикстуры ищутся по `<wsfunction>.<scenario>.json`. Если для функции не задан маршрут,
-тест падает с понятным сообщением (а не получает 404).
+Fixtures are looked up as `<wsfunction>.<scenario>.json`. If no route is set for a function,
+the test fails with a clear message (rather than receiving a 404).
 
-| Уровень | Что | Как |
+| Level | What | How |
 |---|---|---|
-| moodle | разбор каждой фикстуры; exception → sentinel (табл. по `testdata/errors/*`); HTML-тело; 5xx→retry→ok; 5xx×2→err; 4xx без ретрая; таймаут; отмена ctx; allowlist; Bool/Time | httptest |
-| moodle/download | URL-нормализация (табл.: pluginfile, webservice, чужой хост, без pluginfile, с ?token=, с forcedownload); имя из Content-Disposition; sanitize `../../etc`; атомарность; коллизии | httptest + `t.TempDir()` |
-| redact | токен в URL, в url-encoded виде, в тексте ошибки, в логах (буфер slog), в выводе download | property: `assertNoToken(t, everyOutput)` |
-| cache | hit/miss/expire по фейковым часам; refresh перезаписывает; ошибка не кэшируется; singleflight (10 горутин → 1 load) | фейковые часы, без sleep |
-| textfmt | Date/Relative/склонения/DST/полночь; StripHTML (табл. ~20 кейсов из реальных описаний) | чистые |
-| study | ResolveCourse (id, подстрока, регистр, умлауты, неоднозначность, прошлые); Merge (оба источника, только календарь, только assign, срок=0, приоритет срока, extension, вне окна, просрочка); BuildTree с подсекциями; поиск/ранжирование; политика частичных ошибок | фейковый Source, часы `2026-10-02 12:00 Vienna` |
-| render | вывод каждого инструмента | golden-файлы, `go test ./... -update` |
-| tools (e2e) | 8 инструментов через `mcp.NewInMemoryTransports()`: list_tools (схемы), call_tool → golden; invalidtoken → `IsError` с понятным текстом | httptest + реальный клиент + in-memory MCP |
+| moodle | decoding of every fixture; exception → sentinel (table over `testdata/errors/*`); HTML body; 5xx→retry→ok; 5xx×2→err; 4xx without retry; timeout; ctx cancellation; allowlist; Bool/Time | httptest |
+| moodle/download | URL normalization (table: pluginfile, webservice, foreign host, no pluginfile, with ?token=, with forcedownload); name from Content-Disposition; sanitize `../../etc`; atomicity; collisions | httptest + `t.TempDir()` |
+| redact | token in URL, URL-encoded, in error text, in logs (slog buffer), in download output | property: `assertNoToken(t, everyOutput)` |
+| cache | hit/miss/expire with a fake clock; refresh overwrites; errors not cached; singleflight (10 goroutines → 1 load) | fake clock, no sleep |
+| textfmt | Date/Relative/plural forms/DST/midnight; StripHTML (table of ~20 cases from real descriptions) | pure |
+| study | ResolveCourse (id, substring, case, umlauts, ambiguity, past); Merge (both sources, calendar only, assign only, due=0, due-date precedence, extension, outside window, overdue); BuildTree with subsections; search/ranking; partial error policy | fake Source, clock `2026-10-02 12:00 Vienna` |
+| render | output of every tool | golden files, `go test ./... -update` |
+| tools (e2e) | 8 tools via `mcp.NewInMemoryTransports()`: list_tools (schemas), call_tool → golden; invalidtoken → `IsError` with a clear text | httptest + real client + in-memory MCP |
 
 **Makefile**: `build`, `test` (`-race -count=1`), `cover`, `lint` (golangci-lint:
 govet, staticcheck, errcheck, gosec, forbidigo), `golden` (`-update`).
 
-## 12a. Дополнения после первой версии
+## 12a. Additions after the first version
 
-**Поиск внутри файлов** (`moodle_search(in_files=true)`):
-- `internal/extract` — чистые функции «байты → текст»: PDF (`ledongthuc/pdf`, pure Go; строки и
-  пробелы восстанавливаются по координатам глифов в порядке потока), HTML, docx/pptx (XML внутри
-  zip), ipynb, текст и исходники, zip (одна вложенность, бюджет 64 МБ на архив, ≤500 записей).
-  Сбой парсера — ошибка, а не паника (recover).
-- `moodle.Client.FetchFile` читает pluginfile в память с лимитом; та же валидация URL, что у download.
-- `cache.Source.FileText` кэширует текст навсегда по ключу URL + размер + mtime: изменённый файл
-  перечитывается сам.
-- Сопоставление: слова ищутся подстрокой в нормализованном тексте с пробелами (пропавший пробел
-  «offcampus» не мешает); слова от 6 букв — ещё и в тексте без пробелов («di ff erent»). Короче —
-  нельзя: «ssh» нашлось бы в «cla**ss h**ierarchy».
-- Результат по файлу: страницы/слайды/записи архива, где есть все слова (части с некоторыми
-  словами — только если полных нет), и цитата — строка с наибольшим числом слов.
+**Search inside files** (`moodle_search(in_files=true)`):
+- `internal/extract` — pure "bytes → text" functions: PDF (`ledongthuc/pdf`, pure Go; lines and
+  spaces are reconstructed from glyph coordinates in stream order), HTML, docx/pptx (XML inside
+  zip), ipynb, plain text and source code, zip (one level of nesting, 64 MB budget per archive, ≤500 entries).
+  A parser failure is an error, not a panic (recover).
+- `moodle.Client.FetchFile` reads a pluginfile into memory with a limit; same URL validation as download.
+- `cache.Source.FileText` caches text forever under the key URL + size + mtime: a changed file
+  is re-read automatically.
+- Matching: words are searched as substrings in normalized text with spaces (a missing space
+  in "offcampus" does not matter); words of 6+ letters are also searched in text without spaces ("di ff erent"). Shorter
+  words cannot be: "ssh" would match in "cla**ss h**ierarchy".
+- Per-file result: pages/slides/archive entries containing all words (parts with only some
+  words — only if there are no complete ones), cited as "p. N" / "slide N", plus a quote — the line with the most words.
 
-**Транспорт HTTP** (`internal/server`): один `*mcp.Server` для stdio и streamable HTTP. Слои
-защиты: DNS-rebinding (SDK), `http.CrossOriginProtection`, опциональный bearer
-(`auth.RequireBearerToken`, сравнение за постоянное время). Не-loopback адрес без токена — отказ
-на старте. `/healthz` без авторизации.
+**HTTP transport** (`internal/server`): one `*mcp.Server` for stdio and streamable HTTP. Protection
+layers: DNS rebinding (SDK), `http.CrossOriginProtection`, optional bearer
+(`auth.RequireBearerToken`, constant-time comparison). A non-loopback address without a token is refused
+at startup. `/healthz` requires no authorization.
 
-**Обход бага go-sdk v1.8.0:** `"arguments": null` при применении default-значений схемы вызывает
-панику (nil map в jsonschema-go) и роняет процесс. Middleware `nullArguments` подменяет `null` на `{}`.
+**Workaround for a go-sdk v1.8.0 bug:** `"arguments": null` combined with schema default values causes
+a panic (nil map in jsonschema-go) and crashes the process. The `nullArguments` middleware replaces `null` with `{}`.
 
-**Найдено тестами под `-race`:** `transform.Chain` из `x/text` хранит состояние — общий экземпляр
-в `Normalize` падал при параллельных вызовах; теперь создаётся на вызов.
+**Found by tests under `-race`:** `transform.Chain` from `x/text` is stateful — a shared instance
+in `Normalize` failed under parallel calls; it is now created per call.
 
-## 13. Принятые решения
+## 13. Decisions
 
-1. Окно «N дней» — **до конца N-го дня по Вене** (календарные дни, корректно при смене DST),
-   а не N×24 ч: дедлайны в Moodle обычно на 23:59, результат не зависит от часа запроса.
-2. Просроченные несданные assign за последние 7 дней показываются (`include_overdue=true`).
-3. Оценки не кэшируются.
-4. Общий префикс названий курсов в списках убирается.
-5. `make contract` / живые тесты не делаем (живая проверка — вручную, smoke-клиентом).
-6. Go: `GOTOOLCHAIN=auto` (go-sdk v1.8 требует 1.25).
+1. The "N days" window runs **to the end of the N-th day in Vienna** (calendar days, correct across DST changes),
+   not N×24 h: Moodle deadlines are usually at 23:59, and the result does not depend on the hour of the request.
+2. Overdue unsubmitted assignments from the last 7 days are shown (`include_overdue=true`).
+3. Grades are not cached.
+4. The common prefix of course names is stripped in lists.
+5. No `make contract` / live tests (live checks are manual, with a smoke client).
+6. Go: `GOTOOLCHAIN=auto` (go-sdk v1.8 requires 1.25).
+7. Output is English by default. Other languages are planned via the message catalog
+   (`textfmt.SetLanguage` + translations of the English keys), with no changes to output code.

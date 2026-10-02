@@ -336,7 +336,7 @@ func TestSanitizeFilename(t *testing.T) {
 		{"", "download"},
 		{"name\x00\x1f.pdf", "name.pdf"},
 		{"Übung 1.pdf", "Übung 1.pdf"},
-		{strings.Repeat("я", 150) + ".pdf", strings.Repeat("я", 100)},
+		{strings.Repeat("ü", 150) + ".pdf", strings.Repeat("ü", 100)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {

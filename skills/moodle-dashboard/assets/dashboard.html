@@ -221,6 +221,7 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   var data = {};
   try { data = JSON.parse(document.getElementById("data").textContent); } catch (e) { data = {}; }
 
+  // Labels per language; add an entry to support another language.
   var I18N = {
     en: { urgent: "🔴 Urgent", deadlines: "📅 Deadlines", announcements: "📣 Announcements", grades: "🎓 Grades",
           courses: "📚 Courses", calendar: "🗓 Calendar", plan: "🧭 Plan",
@@ -229,23 +230,7 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
           kDone: "submitted", updated: "updated", footer: "Built from Moodle · read-only", theme: "◐ Theme",
           title: "Studies",
           s: { done: "✅ submitted", graded: "✅ graded", draft: "📝 draft", todo: "❌ not submitted",
-               overdue: "⏰ overdue", reopened: "↩️ resubmit", unknown: "?" } },
-    ru: { urgent: "🔴 Срочно", deadlines: "📅 Дедлайны", announcements: "📣 Объявления", grades: "🎓 Оценки",
-          courses: "📚 Курсы", calendar: "🗓 Календарь", plan: "🧭 План",
-          days: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"], calm: "Срочного нет ✨", noDeadlines: "Дедлайнов на этот период нет.",
-          noAnn: "Новых объявлений нет.", kUrgent: "срочно", kDeadlines: "дедлайнов", kAnn: "объявлений",
-          kDone: "заданий сдано", updated: "обновлено", footer: "Собрано из Moodle · только чтение", theme: "◐ Тема",
-          title: "Учёба",
-          s: { done: "✅ сдано", graded: "✅ оценено", draft: "📝 черновик", todo: "❌ не сдано",
-               overdue: "⏰ просрочено", reopened: "↩️ сдать снова", unknown: "?" } },
-    de: { urgent: "🔴 Dringend", deadlines: "📅 Fristen", announcements: "📣 Ankündigungen", grades: "🎓 Noten",
-          courses: "📚 Kurse", calendar: "🗓 Kalender", plan: "🧭 Plan",
-          days: ["Mo","Di","Mi","Do","Fr","Sa","So"], calm: "Nichts Dringendes ✨", noDeadlines: "Keine Fristen in diesem Zeitraum.",
-          noAnn: "Keine neuen Ankündigungen.", kUrgent: "dringend", kDeadlines: "Fristen", kAnn: "Ankündigungen",
-          kDone: "abgegeben", updated: "aktualisiert", footer: "Aus Moodle erstellt · nur lesend", theme: "◐ Thema",
-          title: "Studium",
-          s: { done: "✅ abgegeben", graded: "✅ bewertet", draft: "📝 Entwurf", todo: "❌ nicht abgegeben",
-               overdue: "⏰ überfällig", reopened: "↩️ erneut abgeben", unknown: "?" } }
+               overdue: "⏰ overdue", reopened: "↩️ resubmit", unknown: "?" } }
   };
   var lang = I18N[data.lang] ? data.lang : "en";
   var T = I18N[lang];

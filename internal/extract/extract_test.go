@@ -82,14 +82,14 @@ func TestText(t *testing.T) {
 		wantErr error
 	}{
 		{"pdf pages and labels", "slides.pdf", readFile(t, "sample-two-pages.pdf"),
-			[]string{"[стр. 1] WORKING ON A DAT VM", "Network on campus: directly", "[стр. 2] Off campus: FH VPN required", "Different setup"}, nil, nil},
+			[]string{"[p. 1] WORKING ON A DAT VM", "Network on campus: directly", "[p. 2] Off campus: FH VPN required", "Different setup"}, nil, nil},
 		{"html", "page.HTML", readFile(t, "sample.html"),
 			[]string{"[] Git & SSH\nConnect with ssh user@host from the VPN."}, []string{"<", "&amp;"}, nil},
 		{"markdown", "README.md", []byte("# Title\n\n  some   text  \n"), []string{"[] # Title\nsome text"}, nil, nil},
 		{"r source", "demo.R", []byte("x <- c(1, 2)"), []string{"x <- c(1, 2)"}, nil, nil},
 		{"docx", "Aufgabe.docx", docx, []string{"[] Abgabe bis Freitag\nZweiter Absatz"}, []string{"NOT CONTENT"}, nil},
 		{"pptx slides in numeric order", "lecture.pptx", pptx,
-			[]string{"[слайд 1] Title\n[слайд 2] Second slide\n[слайд 10] Tenth slide"}, []string{"Layout"}, nil},
+			[]string{"[slide 1] Title\n[slide 2] Second slide\n[slide 10] Tenth slide"}, []string{"Layout"}, nil},
 		{"notebook", "lab.ipynb", []byte(notebook), []string{"# Lineare Regression\nmit numpy\nimport numpy as np"}, nil, nil},
 		{"zip with html, md and nested zip", "ssh_instructions.html.zip", archive,
 			[]string{"[ssh_instructions/index.html] SSH\nUse ssh-keygen", "[ssh_instructions/notes.md] VPN off campus",

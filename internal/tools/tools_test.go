@@ -160,12 +160,12 @@ func TestDeadlines_Semantics(t *testing.T) {
 	e := setup(t, moodletest.Token)
 	out, _ := e.call(t, "moodle_deadlines", nil)
 	mustContain := []string{
-		"Homework R0", "❌ не сдано", // overdue, unsubmitted, within 7 days
-		"Quiz LaTeX Basics",      // calendar only
-		"Homework R1", "✅ сдано", // merged from both sources
+		"Homework R0", "❌ not submitted", // overdue, unsubmitted, within 7 days
+		"Quiz LaTeX Basics",          // calendar only
+		"Homework R1", "✅ submitted", // merged from both sources
 		"Homework R2", // assignment only
-		"2026-10-07 17:15 (среда) — через 5 дней",
-		"Ещё 1 задание скрыто",
+		"2026-10-07 17:15 (Wednesday) — in 5 days",
+		"Hidden or not yet available: 1 assignment",
 	}
 	for _, s := range mustContain {
 		if !strings.Contains(out, s) {
@@ -225,14 +225,14 @@ func TestInvalidToken(t *testing.T) {
 			args["query"] = "git"
 		}
 		out, isErr := e.call(t, tool, args)
-		if !isErr || !strings.Contains(out, "Токен Moodle недействителен") {
+		if !isErr || !strings.Contains(out, "The Moodle token is invalid") {
 			t.Errorf("%s: isErr=%v out=%q", tool, isErr, out)
 		}
 	}
 }
 
 func TestInitError(t *testing.T) {
-	e := connect(t, tools.Deps{InitErr: errors.New("не задан MOODLE_TOKEN")}, nil, "")
+	e := connect(t, tools.Deps{InitErr: errors.New("MOODLE_TOKEN is not set")}, nil, "")
 	out, isErr := e.call(t, "moodle_deadlines", nil)
 	if !isErr || !strings.Contains(out, "MOODLE_TOKEN") {
 		t.Fatalf("isErr=%v out=%q", isErr, out)
@@ -248,7 +248,7 @@ func TestPartialFailure(t *testing.T) {
 		return moodletest.File(t, "core_course_get_contents", "real-12308")
 	}))
 	out, isErr := e.call(t, "moodle_search", map[string]any{"query": "gitlab"})
-	if isErr || !strings.Contains(out, "GitLab IT+") || !strings.Contains(out, "⚠ Refresher on Unix Shells and LaTeX: Курс или активность недоступны") {
+	if isErr || !strings.Contains(out, "GitLab IT+") || !strings.Contains(out, "⚠ Refresher on Unix Shells and LaTeX: The course or activity is not accessible") {
 		t.Fatalf("isErr=%v\n%s", isErr, out)
 	}
 }
@@ -263,7 +263,7 @@ func TestDownload(t *testing.T) {
 
 	out, isErr := e.call(t, "moodle_download", map[string]any{"fileurl": browserURL})
 	want := filepath.Join(e.dlDir, "IT+ Labs — Working on a DAT VM.pdf")
-	if isErr || !strings.Contains(out, want) || !strings.Contains(out, "В браузере: "+browserURL) {
+	if isErr || !strings.Contains(out, want) || !strings.Contains(out, "In the browser: "+browserURL) {
 		t.Fatalf("isErr=%v\n%s", isErr, out)
 	}
 	if b, err := os.ReadFile(want); err != nil || string(b) != "%PDF-1.7" {
@@ -271,7 +271,7 @@ func TestDownload(t *testing.T) {
 	}
 
 	out, isErr = e.call(t, "moodle_download", map[string]any{"fileurl": "https://evil.example/pluginfile.php/1/a.pdf"})
-	if !isErr || !strings.Contains(out, "не ведёт на файл этого Moodle") {
+	if !isErr || !strings.Contains(out, "does not point to a file of this Moodle") {
 		t.Fatalf("foreign URL: isErr=%v %s", isErr, out)
 	}
 }
@@ -340,7 +340,7 @@ func TestInputValidation(t *testing.T) {
 func TestSearchInFiles_TextIsCached(t *testing.T) {
 	e := setup(t, moodletest.Token)
 	out, isErr := e.call(t, "moodle_search", map[string]any{"query": "different setup", "in_files": true, "course": "12308"})
-	if isErr || !strings.Contains(out, "стр. 2") || !strings.Contains(out, "Different setup for macOS") {
+	if isErr || !strings.Contains(out, "p. 2") || !strings.Contains(out, "Different setup for macOS") {
 		t.Fatalf("isErr=%v\n%s", isErr, out)
 	}
 	first := e.srv.Calls("pluginfile")

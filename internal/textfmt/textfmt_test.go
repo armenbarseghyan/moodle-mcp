@@ -22,12 +22,12 @@ func TestDate(t *testing.T) {
 		in   time.Time
 		want string
 	}{
-		{vie("2026-10-07 17:15"), "2026-10-07 17:15 (среда)"},
-		{vie("2026-10-04 00:00"), "2026-10-04 00:00 (воскресенье)"},
+		{vie("2026-10-07 17:15"), "2026-10-07 17:15 (Wednesday)"},
+		{vie("2026-10-04 00:00"), "2026-10-04 00:00 (Sunday)"},
 		// Moodle timestamps are UTC instants; output must be Vienna wall time.
-		{time.Unix(1791386100, 0).UTC(), "2026-10-07 17:15 (среда)"},
+		{time.Unix(1791386100, 0).UTC(), "2026-10-07 17:15 (Wednesday)"},
 		// Winter time: 23:59 UTC on 31.12 is already 1 January in Vienna.
-		{time.Date(2026, 12, 31, 23, 59, 0, 0, time.UTC), "2027-01-01 00:59 (пятница)"},
+		{time.Date(2026, 12, 31, 23, 59, 0, 0, time.UTC), "2027-01-01 00:59 (Friday)"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.want, func(t *testing.T) {
@@ -48,25 +48,25 @@ func TestRelative(t *testing.T) {
 		now  time.Time
 		want string
 	}{
-		{"now", now.Add(20 * time.Second), now, "сейчас"},
-		{"minutes", now.Add(40 * time.Minute), now, "через 40 мин"},
-		{"hours today", vie("2026-10-02 23:59"), now, "сегодня, через 11 ч"},
-		{"tomorrow early", vie("2026-10-03 00:30"), now, "завтра"},
-		{"tomorrow by minutes", vie("2026-10-03 00:10"), vie("2026-10-02 23:50"), "через 20 мин"},
-		{"2 days", vie("2026-10-04 09:00"), now, "через 2 дня"},
-		{"4 days", vie("2026-10-06 23:59"), now, "через 4 дня"},
-		{"5 days", vie("2026-10-07 17:15"), now, "через 5 дней"},
-		{"calendar days, not 24h", vie("2026-10-04 08:00"), vie("2026-10-02 23:00"), "через 2 дня"},
-		{"21 days", vie("2026-10-23 12:00"), now, "через 21 день"},
-		{"just now", now.Add(-10 * time.Second), now, "только что"},
-		{"minutes ago", now.Add(-15 * time.Minute), now, "15 мин назад"},
-		{"hours ago", vie("2026-10-02 09:00"), now, "сегодня, 3 ч назад"},
-		{"yesterday", vie("2026-10-01 23:59"), now, "вчера"},
-		{"days ago", vie("2026-09-30 09:30"), now, "2 дня назад"},
-		{"11 days ago", vie("2026-09-21 12:00"), now, "11 дней назад"},
+		{"now", now.Add(20 * time.Second), now, "now"},
+		{"minutes", now.Add(40 * time.Minute), now, "in 40 min"},
+		{"hours today", vie("2026-10-02 23:59"), now, "today, in 11 h"},
+		{"tomorrow early", vie("2026-10-03 00:30"), now, "tomorrow"},
+		{"tomorrow by minutes", vie("2026-10-03 00:10"), vie("2026-10-02 23:50"), "in 20 min"},
+		{"2 days", vie("2026-10-04 09:00"), now, "in 2 days"},
+		{"4 days", vie("2026-10-06 23:59"), now, "in 4 days"},
+		{"5 days", vie("2026-10-07 17:15"), now, "in 5 days"},
+		{"calendar days, not 24h", vie("2026-10-04 08:00"), vie("2026-10-02 23:00"), "in 2 days"},
+		{"21 days", vie("2026-10-23 12:00"), now, "in 21 days"},
+		{"just now", now.Add(-10 * time.Second), now, "just now"},
+		{"minutes ago", now.Add(-15 * time.Minute), now, "15 min ago"},
+		{"hours ago", vie("2026-10-02 09:00"), now, "today, 3 h ago"},
+		{"yesterday", vie("2026-10-01 23:59"), now, "yesterday"},
+		{"days ago", vie("2026-09-30 09:30"), now, "2 days ago"},
+		{"11 days ago", vie("2026-09-21 12:00"), now, "11 days ago"},
 		// DST ends 2026-10-25 03:00 CEST → 02:00 CET: that day has 25 hours.
-		{"DST day is still today", vie("2026-10-25 23:30"), vie("2026-10-25 00:30"), "сегодня, через 24 ч"},
-		{"across DST", vie("2026-10-26 12:00"), vie("2026-10-24 12:00"), "через 2 дня"},
+		{"DST day is still today", vie("2026-10-25 23:30"), vie("2026-10-25 00:30"), "today, in 24 h"},
+		{"across DST", vie("2026-10-26 12:00"), vie("2026-10-24 12:00"), "in 2 days"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -106,16 +106,26 @@ func TestDayStart(t *testing.T) {
 	}
 }
 
-func TestPlural(t *testing.T) {
+func TestCountedPhrases(t *testing.T) {
 	t.Parallel()
-	want := map[int]string{
-		0: "дней", 1: "день", 2: "дня", 3: "дня", 4: "дня", 5: "дней", 10: "дней",
-		11: "дней", 12: "дней", 14: "дней", 21: "день", 22: "дня", 25: "дней",
-		101: "день", 111: "дней", 112: "дней", 122: "дня", -1: "день",
+	p := textfmt.P()
+	tests := []struct {
+		key  string
+		n    int
+		want string
+	}{
+		{"in %d days", 1, "in 1 day"},
+		{"in %d days", 2, "in 2 days"},
+		{"%d days ago", 1, "1 day ago"},
+		{"%d matches", 0, "0 matches"},
+		{"%d matches", 1, "1 match"},
+		{"%d assignments", 3, "3 assignments"},
+		{"%d active courses", 1, "1 active course"},
+		{"%d more lines", 12, "12 more lines"},
 	}
-	for n, w := range want {
-		if got := textfmt.Plural(n, "день", "дня", "дней"); got != w {
-			t.Errorf("Plural(%d) = %q, want %q", n, got, w)
+	for _, tt := range tests {
+		if got := p.Sprintf(tt.key, tt.n); got != tt.want {
+			t.Errorf("Sprintf(%q, %d) = %q, want %q", tt.key, tt.n, got, tt.want)
 		}
 	}
 }

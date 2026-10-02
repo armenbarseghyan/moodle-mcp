@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,23 +16,28 @@ const (
 	maxFeedbackText     = 500
 )
 
+// itoa keeps identifiers out of the printer's number localisation ("12,308").
+func itoa(n int) string { return strconv.Itoa(n) }
+
+func tr(format string, args ...any) string { return textfmt.P().Sprintf(format, args...) }
+
 // Courses renders moodle_courses.
 func Courses(r study.CoursesResult, now time.Time) string {
 	d := newDoc()
-	d.line("## Курсы: %d %s", len(r.Active), textfmt.Plural(len(r.Active), "активный", "активных", "активных"))
+	d.line("## %s", tr("%d active courses", len(r.Active)))
 	if r.Prefix != "" {
-		d.line("_Общий префикс «%s» в названиях опущен._", strings.TrimSpace(r.Prefix))
+		d.line("_The common prefix %s is left out of the names._", "“"+strings.TrimSpace(r.Prefix)+"”")
 	}
 	d.blank()
 	for _, c := range r.Active {
 		d.line("- %s", courseLine(c))
 	}
 	if len(r.Active) == 0 {
-		d.line("Активных курсов нет.")
+		d.line("No active courses.")
 	}
 	if len(r.Past) > 0 {
 		d.blank()
-		d.line("### Прошедшие и скрытые")
+		d.line("### Past and hidden")
 		for _, c := range r.Past {
 			d.line("- %s", courseLine(c))
 		}
@@ -40,7 +46,7 @@ func Courses(r study.CoursesResult, now time.Time) string {
 }
 
 func courseLine(c study.Course) string {
-	parts := []string{"**" + link(c.Label, c.URL) + "**", fmt.Sprintf("id %d", c.ID)}
+	parts := []string{"**" + link(c.Label, c.URL) + "**", "id " + itoa(c.ID)}
 	if c.ShortName != "" && c.ShortName != c.Label {
 		parts = append(parts, c.ShortName)
 	}
@@ -48,10 +54,10 @@ func courseLine(c study.Course) string {
 	case !c.Start.IsZero() && !c.End.IsZero():
 		parts = append(parts, textfmt.Day(c.Start)+" – "+textfmt.Day(c.End))
 	case !c.Start.IsZero():
-		parts = append(parts, "с "+textfmt.Day(c.Start))
+		parts = append(parts, tr("since %s", textfmt.Day(c.Start)))
 	}
 	if c.Progress != nil {
-		parts = append(parts, fmt.Sprintf("прогресс %.0f%%", *c.Progress))
+		parts = append(parts, tr("progress %s%%", fmt.Sprintf("%.0f", *c.Progress)))
 	}
 	return strings.Join(parts, " · ")
 }
@@ -60,17 +66,17 @@ func courseLine(c study.Course) string {
 func Deadlines(r study.DeadlinesResult, now time.Time) string {
 	d := newDoc()
 	last := r.Until.Add(-time.Second)
-	d.line("## Дедлайны до %s (%d %s)", textfmt.Day(last), r.Days, textfmt.Plural(r.Days, "день", "дня", "дней"))
+	d.line("## Deadlines until %s (%s)", textfmt.Day(last), tr("%d days", r.Days))
 	if len(r.Overdue) > 0 {
 		d.blank()
-		d.line("**Просрочено и не сдано**")
+		d.line("**Overdue and not submitted**")
 		for _, x := range r.Overdue {
 			d.line("- %s", deadlineLine(x, now))
 		}
 	}
 	d.blank()
 	if len(r.Upcoming) == 0 {
-		d.line("Дедлайнов на этот период нет.")
+		d.line("No deadlines in this period.")
 	}
 	for _, x := range r.Upcoming {
 		d.line("- %s", deadlineLine(x, now))
@@ -79,8 +85,7 @@ func Deadlines(r study.DeadlinesResult, now time.Time) string {
 		d.blank()
 	}
 	if r.Hidden > 0 {
-		d.line("_Ещё %d %s скрыто или пока недоступно._", r.Hidden,
-			textfmt.Plural(r.Hidden, "задание", "задания", "заданий"))
+		d.line("_Hidden or not yet available: %s._", tr("%d assignments", r.Hidden))
 	}
 	for _, w := range r.Warnings {
 		d.line("⚠ %s", w)
@@ -100,17 +105,17 @@ func deadlineLine(x study.Deadline, now time.Time) string {
 func statusLabel(s study.Submission) string {
 	switch s {
 	case study.SubmissionNotSubmitted:
-		return "❌ не сдано"
+		return tr("❌ not submitted")
 	case study.SubmissionDraft:
-		return "📝 черновик, не отправлено"
+		return tr("📝 draft, not submitted")
 	case study.SubmissionSubmitted:
-		return "✅ сдано"
+		return tr("✅ submitted")
 	case study.SubmissionGraded:
-		return "✅ сдано, оценено"
+		return tr("✅ submitted, graded")
 	case study.SubmissionReopened:
-		return "↩️ переоткрыто, нужно сдать снова"
+		return tr("↩️ reopened, submit again")
 	case study.SubmissionUnknown:
-		return "статус неизвестен"
+		return tr("status unknown")
 	default:
 		return ""
 	}
@@ -119,10 +124,10 @@ func statusLabel(s study.Submission) string {
 // Contents renders moodle_course_contents.
 func Contents(r study.ContentsResult, now time.Time) string {
 	d := newDoc()
-	d.line("## %s (id %d)", link(r.Course.Label, r.Course.URL), r.Course.ID)
+	d.line("## %s (id %s)", link(r.Course.Label, r.Course.URL), itoa(r.Course.ID))
 	if len(r.Sections) == 0 {
 		d.blank()
-		d.line("В курсе нет видимых материалов.")
+		d.line("The course has no visible material.")
 	}
 	for _, s := range r.Sections {
 		d.blank()
@@ -136,7 +141,7 @@ func writeSection(d *doc, s study.Section, depth int) {
 	if depth == 0 {
 		name := s.Name
 		if name == "" {
-			name = "Без названия"
+			name = tr("Untitled")
 		}
 		d.line("### %s", name)
 	}
@@ -150,7 +155,7 @@ func writeSection(d *doc, s study.Section, depth int) {
 		}
 	}
 	if s.Hidden > 0 {
-		d.line("%s_скрыто или недоступно: %d_", indent, s.Hidden)
+		d.line("%s_%s_", indent, tr("hidden or not available: %d", s.Hidden))
 	}
 }
 
@@ -196,14 +201,14 @@ func Search(r study.SearchResult, now time.Time) string {
 	d := newDoc()
 	scope := ""
 	if r.Scope != nil {
-		scope = " в курсе " + r.Scope.Label
+		scope = tr(" in %s", r.Scope.Label)
 	}
 	total := r.Total + r.FileTotal
-	d.line("## Поиск «%s»%s: %d %s", r.Query, scope, total, textfmt.Plural(total, "совпадение", "совпадения", "совпадений"))
+	d.line("## Search “%s”%s: %s", r.Query, scope, tr("%d matches", total))
 	if r.Total > 0 {
 		d.blank()
 		if r.InFiles {
-			d.line("### В названиях и описаниях")
+			d.line("### In names and descriptions")
 		}
 		for _, h := range r.Hits {
 			it := h.Item
@@ -222,21 +227,21 @@ func Search(r study.SearchResult, now time.Time) string {
 			}
 		}
 		if r.Total > len(r.Hits) {
-			d.line("_Показаны первые %d из %d — уточни запрос._", len(r.Hits), r.Total)
+			d.line("_Showing the first %d of %d — narrow the query._", len(r.Hits), r.Total)
 		}
 	}
 	if r.InFiles {
 		d.blank()
-		d.line("### Внутри файлов")
+		d.line("### Inside files")
 		if r.FileTotal == 0 {
-			d.line("Совпадений в тексте файлов нет.")
+			d.line("No matches in the text of files.")
 		}
 		for _, h := range r.FileHits {
 			parts := []string{link(h.File.Name, h.File.URL)}
 			if len(h.Labels) > 0 {
 				l := strings.Join(h.Labels, ", ")
 				if h.More > 0 {
-					l += fmt.Sprintf(" и ещё %d", h.More)
+					l += tr(" and %d more", h.More)
 				}
 				parts = append(parts, l)
 			}
@@ -247,22 +252,22 @@ func Search(r study.SearchResult, now time.Time) string {
 			}
 		}
 		if r.FileTotal > len(r.FileHits) {
-			d.line("_Показаны первые %d из %d файлов — уточни запрос._", len(r.FileHits), r.FileTotal)
+			d.line("_Showing the first %d of %d files — narrow the query._", len(r.FileHits), r.FileTotal)
 		}
 		d.blank()
-		note := fmt.Sprintf("_Просмотрено файлов: %d", r.Indexed)
+		note := tr("Files searched: %d", r.Indexed)
 		if r.Skipped > 0 {
-			note += fmt.Sprintf("; пропущено (видео, картинки, слишком большие): %d", r.Skipped)
+			note += tr("; skipped (video, images, too large): %d", r.Skipped)
 		}
 		if r.Failed > 0 {
-			note += fmt.Sprintf("; не удалось прочитать: %d", r.Failed)
+			note += tr("; could not be read: %d", r.Failed)
 		}
-		d.line("%s._", note)
+		d.line("_%s._", note)
 	}
 	if total == 0 && !r.InFiles {
 		d.blank()
-		d.line("Ничего не найдено в названиях, описаниях и именах файлов. " +
-			"Можно искать и внутри PDF и документов: in_files=true.")
+		d.line("Nothing found in names, descriptions and file names. " +
+			"To search inside PDFs and documents too, use in_files=true.")
 	}
 	courseErrors(d, r.Errors)
 	return d.finish(now, r.FetchedAt)
@@ -279,7 +284,7 @@ func place(c study.CourseRef, path []string, scope *study.CourseRef) string {
 // Grades renders moodle_grades.
 func Grades(r study.GradesResult, now time.Time) string {
 	d := newDoc()
-	d.line("## Оценки")
+	d.line("## Grades")
 	var empty []string
 	shown := 0
 	for _, cg := range r.Courses {
@@ -297,18 +302,18 @@ func Grades(r study.GradesResult, now time.Time) string {
 			}
 		}
 		if cg.Pending > 0 {
-			d.line("- ещё не оценено: %d", cg.Pending)
+			d.line("- not graded yet: %d", cg.Pending)
 		}
 		if cg.Total != nil {
-			d.line("- Итог курса: %s", gradeValue(*cg.Total))
+			d.line("- Course total: %s", gradeValue(*cg.Total))
 		}
 	}
 	if len(empty) > 0 {
 		d.blank()
 		if shown == 0 && len(empty) == 1 {
-			d.line("%s: оценок пока нет.", empty[0])
+			d.line("%s: no grades yet.", empty[0])
 		} else {
-			d.line("Без оценок: %s.", strings.Join(empty, ", "))
+			d.line("No grades yet: %s.", strings.Join(empty, ", "))
 		}
 	}
 	courseErrors(d, r.Errors)
@@ -318,18 +323,18 @@ func Grades(r study.GradesResult, now time.Time) string {
 func gradeLine(g study.Grade) string {
 	name := g.Name
 	if name == "" {
-		name = "Без названия"
+		name = tr("Untitled")
 	}
 	parts := []string{link(name, g.URL) + ": " + gradeValue(g)}
 	if !g.GradedAt.IsZero() {
-		parts = append(parts, "оценено "+textfmt.Day(g.GradedAt))
+		parts = append(parts, tr("graded %s", textfmt.Day(g.GradedAt)))
 	}
 	return strings.Join(parts, " · ")
 }
 
 func gradeValue(g study.Grade) string {
 	if g.Display == "" {
-		return "не оценено"
+		return tr("not graded")
 	}
 	s := "**" + g.Display + "**"
 	if g.Max > 0 && g.Percent != nil {
@@ -338,18 +343,19 @@ func gradeValue(g study.Grade) string {
 	return s
 }
 
+// trimFloat renders 100 as "100" and 87.5 as "87.5". Moodle's own formatted
+// grade (g.Display) keeps the site's notation.
 func trimFloat(f float64) string {
-	s := strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.1f", f), "0"), ".")
-	return strings.Replace(s, ".", ",", 1) // German/Russian decimal comma, like Moodle's own values
+	return strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.1f", f), "0"), ".")
 }
 
 // Announcements renders moodle_announcements.
 func Announcements(r study.AnnouncementsResult, now time.Time) string {
 	d := newDoc()
-	d.line("## Объявления за %d %s: %d", r.Days, textfmt.Plural(r.Days, "день", "дня", "дней"), len(r.Items))
+	d.line("## Announcements, last %s: %d", tr("%d days", r.Days), len(r.Items))
 	if len(r.Items) == 0 {
 		d.blank()
-		d.line("Новых объявлений нет.")
+		d.line("No new announcements.")
 	}
 	for _, a := range r.Items {
 		d.blank()
@@ -364,12 +370,12 @@ func Announcements(r study.AnnouncementsResult, now time.Time) string {
 		}
 		meta = append(meta, when(a.Posted, now))
 		if !a.Edited.IsZero() {
-			meta = append(meta, "изменено "+textfmt.Relative(a.Edited, now))
+			meta = append(meta, tr("edited %s", textfmt.Relative(a.Edited, now)))
 		}
 		if a.Unread {
-			meta = append(meta, "непрочитано")
+			meta = append(meta, tr("unread"))
 		}
-		meta = append(meta, link("открыть", a.URL))
+		meta = append(meta, link(tr("open"), a.URL))
 		d.line("%s", strings.Join(meta, " · "))
 		if a.Text != "" {
 			d.line("")
@@ -384,16 +390,16 @@ func Announcements(r study.AnnouncementsResult, now time.Time) string {
 
 // Download renders moodle_download.
 func Download(r study.DownloadResult) string {
-	verb := "Скачано"
+	verb := tr("Downloaded")
 	if r.Reused {
-		verb = "Уже было скачано (файл не изменился)"
+		verb = tr("Already downloaded (file unchanged)")
 	}
 	s := fmt.Sprintf("%s: `%s`", verb, r.Path)
 	if sz := Size(r.Size); sz != "" {
 		s += " (" + sz + ")"
 	}
 	if r.BrowserURL != "" {
-		s += "\nВ браузере: " + escapeURL(r.BrowserURL)
+		s += "\n" + tr("In the browser: %s", escapeURL(r.BrowserURL))
 	}
 	return s + "\n"
 }
@@ -402,18 +408,18 @@ func Download(r study.DownloadResult) string {
 func WhoAmI(r study.WhoAmIResult, version string) string {
 	d := newDoc()
 	d.line("## %s", r.SiteName)
-	d.line("- Пользователь: %s (%s), id %d", r.FullName, r.Username, r.UserID)
-	d.line("- Сайт: %s · Moodle %s · язык %s", r.SiteURL, r.Release, r.Lang)
+	d.line("- User: %s (%s), id %s", r.FullName, r.Username, itoa(r.UserID))
+	d.line("- Site: %s · Moodle %s · language %s", r.SiteURL, r.Release, r.Lang)
 	if len(r.Missing) == 0 {
-		d.line("- Функций доступно: %d; все %d нужных серверу есть", r.Functions, len(r.Required))
+		d.line("- Functions available: %d; all %d the server needs are there", r.Functions, len(r.Required))
 	} else {
-		d.line("- Функций доступно: %d; **не хватает %d из %d**: %s", r.Functions, len(r.Missing),
+		d.line("- Functions available: %d; **%d of %d missing**: %s", r.Functions, len(r.Missing),
 			len(r.Required), strings.Join(r.Missing, ", "))
 	}
 	if r.DownloadFiles {
-		d.line("- Скачивание файлов через API: разрешено")
+		d.line("- File download via the API: allowed")
 	} else {
-		d.line("- Скачивание файлов через API: **запрещено** на сайте")
+		d.line("- File download via the API: **disabled** on the site")
 	}
 	if version != "" {
 		d.line("- moodle-mcp %s", version)
@@ -424,13 +430,13 @@ func WhoAmI(r study.WhoAmIResult, version string) string {
 // Ambiguous renders a course query that matched several courses.
 func Ambiguous(e *study.AmbiguousError) string {
 	d := newDoc()
-	d.line("По запросу «%s» подходит несколько курсов — уточни название или укажи id:", e.Query)
+	d.line("Several courses match “%s” — use a more specific name or the id:", e.Query)
 	for _, c := range e.Candidates {
 		past := ""
 		if c.Past {
-			past = " · прошедший"
+			past = " · " + tr("past")
 		}
-		d.line("- %s · id %d%s", c.Label, c.ID, past)
+		d.line("- %s · id %s%s", c.Label, itoa(c.ID), past)
 	}
 	return d.finish(time.Time{}, time.Time{})
 }
@@ -438,11 +444,11 @@ func Ambiguous(e *study.AmbiguousError) string {
 // NotFound renders a course query that matched nothing.
 func NotFound(e *study.NotFoundError) string {
 	d := newDoc()
-	d.line("Курс «%s» не найден.", e.Query)
+	d.line("No course matches “%s”.", e.Query)
 	if len(e.Available) > 0 {
-		d.line("Активные курсы:")
+		d.line("Active courses:")
 		for _, c := range e.Available {
-			d.line("- %s · id %d", c.Label, c.ID)
+			d.line("- %s · id %s", c.Label, itoa(c.ID))
 		}
 	}
 	return d.finish(time.Time{}, time.Time{})

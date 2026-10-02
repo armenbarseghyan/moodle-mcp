@@ -1,6 +1,6 @@
 ---
 name: moodle-materials
-description: Find course material in Moodle (FH JOANNEUM) and answer from its content — slides, lectures, PDFs, how-tos (VPN, SSH, GitLab, VMs, lab PCs), templates, archives, course pages. Use this skill whenever the user looks for something from their courses or asks "how do I X" where the answer likely sits in course material, in any language — "where is the lecture on…", "find the slides", "how do I connect to the VM / VPN / server", "what was in lecture R1", "is there a git guide?", "где лежит лекция про…", "как подключиться к VM", "найди инструкцию по VPN", "wo finde ich die Folien", "Anleitung VPN" — even if Moodle is not mentioned. Not for deadlines (moodle-briefing) or for working through one assignment (moodle-assignment).
+description: Find course material in Moodle (FH JOANNEUM) and answer from its content — slides, lectures, PDFs, how-tos (VPN, SSH, GitLab, VMs, lab PCs), templates, archives, course pages. Use this skill whenever the user looks for something from their courses or asks "how do I X" where the answer likely sits in course material, in any language — "where is the lecture on…", "find the slides", "how do I connect to the VM / VPN / server", "what was in lecture R1", "is there a git guide?", "wo finde ich die Folien", "Anleitung VPN" — even if Moodle is not mentioned. Not for deadlines (moodle-briefing) or for working through one assignment (moodle-assignment).
 allowed-tools: mcp__moodle__moodle_search, mcp__moodle__moodle_course_contents, mcp__moodle__moodle_courses, mcp__moodle__moodle_download, Read
 ---
 
@@ -16,8 +16,8 @@ Reply in the user's language; keep quotes, commands and file names in the origin
 ## Search strategy
 
 1. **Search in the material's language.** DAT courses are taught in English, the site is in
-   German, the user may write in Russian or anything else. Translate the intent into 1–2
-   English keywords (German as a fallback): "как подключиться к виртуалке" → `VM`, `remote`,
+   German, the user may write in any language. Translate the intent into 1–2
+   English keywords (German as a fallback): "wie komme ich von zu Hause auf die VM" → `VM`, `remote`,
    `ssh`; "exam schedule" → `exam`, `assessment`, `Prüfung`. Every word must match, so keep it
    short.
 2. **Metadata first:** `moodle_search(query)` — module names, file names, descriptions. Fast.

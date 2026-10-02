@@ -27,19 +27,19 @@ func TestErrorText(t *testing.T) {
 		err  error
 		want string
 	}{
-		{"invalid token", &moodle.Error{ErrorCode: "invalidtoken"}, "Токен Moodle недействителен"},
+		{"invalid token", &moodle.Error{ErrorCode: "invalidtoken"}, "The Moodle token is invalid or revoked"},
 		{"wrapped invalid token", fmt.Errorf("courses: %w", &moodle.Error{ErrorCode: "invalidtoken"}), "MOODLE_TOKEN"},
 		{"access control", &moodle.Error{ErrorCode: "accessexception"}, "access control"},
-		{"require login", &moodle.Error{ErrorCode: "requireloginerror"}, "недоступны"},
-		{"maintenance", &moodle.Error{ErrorCode: "sitemaintenance"}, "обслуживании"},
+		{"require login", &moodle.Error{ErrorCode: "requireloginerror"}, "not accessible"},
+		{"maintenance", &moodle.Error{ErrorCode: "sitemaintenance"}, "maintenance mode"},
 		{"other moodle error", &moodle.Error{ErrorCode: "invalidrecord", Message: "Datensatz fehlt"}, "invalidrecord: Datensatz fehlt"},
-		{"not allowed", fmt.Errorf("%w: x", moodle.ErrNotAllowed), "только на чтение"},
+		{"not allowed", fmt.Errorf("%w: x", moodle.ErrNotAllowed), "read-only"},
 		{"foreign url", fmt.Errorf("%w: host", moodle.ErrForeignURL), "pluginfile.php"},
-		{"html instead of json", &moodle.UnexpectedResponseError{}, "не-JSON"},
+		{"html instead of json", &moodle.UnexpectedResponseError{}, "non-JSON"},
 		{"http status", &moodle.HTTPError{Status: 502}, "HTTP 502"},
-		{"deadline", fmt.Errorf("x: %w", context.DeadlineExceeded), "таймаут"},
-		{"net timeout", &url.Error{Op: "Post", URL: "https://m.test", Err: timeoutErr{}}, "таймаут"},
-		{"net error", &url.Error{Op: "Post", URL: "https://m.test", Err: errors.New("connection refused")}, "Нет связи с Moodle: connection refused"},
+		{"deadline", fmt.Errorf("x: %w", context.DeadlineExceeded), "timeout"},
+		{"net timeout", &url.Error{Op: "Post", URL: "https://m.test", Err: timeoutErr{}}, "timeout"},
+		{"net error", &url.Error{Op: "Post", URL: "https://m.test", Err: errors.New("connection refused")}, "Cannot reach Moodle: connection refused"},
 		{"plain", errors.New("boom"), "boom"},
 	}
 	for _, tt := range tests {
@@ -58,7 +58,7 @@ func TestErrorText(t *testing.T) {
 func TestSize(t *testing.T) {
 	t.Parallel()
 	for in, want := range map[int64]string{
-		0: "", -1: "", 512: "512 Б", 1024: "1 КБ", 227077: "222 КБ", 2958940: "2,8 МБ",
+		0: "", -1: "", 512: "512 B", 1024: "1 KB", 227077: "222 KB", 2958940: "2.8 MB",
 	} {
 		if got := render.Size(in); got != want {
 			t.Errorf("Size(%d) = %q, want %q", in, got, want)
@@ -82,7 +82,7 @@ func TestOutputIsBounded(t *testing.T) {
 	if len(out) > render.MaxChars+300 {
 		t.Errorf("output %d chars, limit %d", len(out), render.MaxChars)
 	}
-	if !strings.Contains(out, "не показано — уточни запрос") {
+	if !strings.Contains(out, "not shown — narrow the request") {
 		t.Error("truncation must be announced")
 	}
 }
@@ -90,11 +90,11 @@ func TestOutputIsBounded(t *testing.T) {
 func TestStaleCacheNote(t *testing.T) {
 	t.Parallel()
 	r := study.CoursesResult{FetchedAt: now.Add(-7 * time.Minute)}
-	if out := render.Courses(r, now); !strings.Contains(out, "Данные из кэша, 7 мин назад") {
+	if out := render.Courses(r, now); !strings.Contains(out, "Cached data from 7 min ago") {
 		t.Errorf("stale note missing:\n%s", out)
 	}
 	r.FetchedAt = now.Add(-10 * time.Second)
-	if out := render.Courses(r, now); strings.Contains(out, "кэша") {
+	if out := render.Courses(r, now); strings.Contains(out, "Cached data") {
 		t.Errorf("fresh data must not carry a cache note:\n%s", out)
 	}
 }

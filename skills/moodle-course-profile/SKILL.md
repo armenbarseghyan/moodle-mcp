@@ -1,6 +1,6 @@
 ---
 name: moodle-course-profile
-description: Course profiles built from the syllabus of each Moodle course (FH JOANNEUM) — how a course is graded (components, weights, what must be passed separately, pass rules, retakes), attendance, exemption exams, tools, topics. Use this skill to build or update the profiles ("read my syllabi", "set up my courses", "составь профили курсов"), and whenever the user asks about the rules of a course, in any language — "how is DQL graded", "what do I need to pass statistics", "how much is the homework worth", "сколько весит домашка", "что обязательно сдать", "wie wird der Kurs benotet". Other moodle skills read these profiles; build them first if they are missing.
+description: Course profiles built from the syllabus of each Moodle course (FH JOANNEUM) — how a course is graded (components, weights, what must be passed separately, pass rules, retakes), attendance, exemption exams, tools, topics. Use this skill to build or update the profiles ("read my syllabi", "set up my courses"), and whenever the user asks about the rules of a course, in any language — "how is DQL graded", "what do I need to pass statistics", "how much is the homework worth", "wie wird der Kurs benotet". Other moodle skills read these profiles; build them first if they are missing.
 allowed-tools: mcp__moodle__moodle_courses, mcp__moodle__moodle_search, mcp__moodle__moodle_course_contents, mcp__moodle__moodle_download, Read, Write, Bash(python3:*)
 ---
 

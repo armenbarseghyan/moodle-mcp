@@ -1,6 +1,6 @@
 ---
 name: moodle-assignment
-description: Work through one specific Moodle assignment (FH JOANNEUM) — what exactly to do, the deadline, whether it is submitted, where the task sheet is — and turn it into a checklist and a plan. Use this skill whenever the user asks about a single assignment, homework, exercise sheet, lab or quiz, in any language — "what do I need to do for Homework R1", "when is the programming homework due", "did I submit R2?", "help me start the lab", "что нужно сделать в Homework R1", "когда сдавать домашку", "разбери задание", "Abgabe für Übung 3" — even if Moodle is not named. Not for an overview of all deadlines (moodle-briefing).
+description: Work through one specific Moodle assignment (FH JOANNEUM) — what exactly to do, the deadline, whether it is submitted, where the task sheet is — and turn it into a checklist and a plan. Use this skill whenever the user asks about a single assignment, homework, exercise sheet, lab or quiz, in any language — "what do I need to do for Homework R1", "when is the programming homework due", "did I submit R2?", "help me start the lab", "Abgabe für Übung 3" — even if Moodle is not named. Not for an overview of all deadlines (moodle-briefing).
 allowed-tools: mcp__moodle__moodle_deadlines, mcp__moodle__moodle_search, mcp__moodle__moodle_course_contents, mcp__moodle__moodle_courses, mcp__moodle__moodle_download, mcp__moodle__moodle_grades, Read
 ---
 
