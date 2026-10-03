@@ -5,7 +5,7 @@ tested in English.
 
 | Skill | Use it for | Example prompts |
 |---|---|---|
-| [moodle-briefing](moodle-briefing/SKILL.md) | what is urgent, new announcements, what is due — prioritised | "what's due this week?", "gibt es was Dringendes?" |
+| [moodle-briefing](moodle-briefing/SKILL.md) | what is urgent, what's new (announcements, new files, grades), what is due — prioritised | "what's due this week?", "anything new since Monday?", "gibt es was Dringendes?" |
 | [moodle-materials](moodle-materials/SKILL.md) | find material and answer from it, with page and quote | "how do I connect to the lab VM from home?" |
 | [moodle-assignment](moodle-assignment/SKILL.md) | one assignment: deadline, status, task sheet, checklist, plan, earlier feedback | "what do I need to do for Homework R2?" |
 | [moodle-grades](moodle-grades/SKILL.md) | grades, percentages, teacher feedback with translation | "how are my grades?" |

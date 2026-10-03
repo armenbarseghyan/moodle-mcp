@@ -118,7 +118,7 @@ sent to the assistant like anything else you type into a chat. See [SECURITY.md]
 
 ## Reference
 
-Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). What changed: [CHANGELOG.md](CHANGELOG.md).
 
 ### Environment
 

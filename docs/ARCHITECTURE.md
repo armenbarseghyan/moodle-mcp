@@ -225,6 +225,14 @@ One course: `GradeItems(id, userid)`. All courses: fan-out ≤5.
 Text: StripHTML, truncated to 1500 characters + "… [in full](url)". Pinned posts are marked 📌.
 URL: `/mod/forum/discuss.php?d=<discussion>`.
 
+### moodle_whats_new(days=7, refresh)
+Contents of all active courses (cache shared with search) → every file and page HTML whose
+`timecreated` or `timemodified` ≥ now − days: **new** when created in the period, otherwise
+**updated** (Moodle sometimes omits `timecreated`; then it counts as updated). Plus
+`Announcements(days)` and the grades whose `gradedategraded` falls in the period (grades stay
+uncached). Each part reports its own course errors; one failing part never hides the others.
+Times later than now (server clock skew) are shown as "now".
+
 ### moodle_download(fileurl, dest="")
 ```
 parse → host == host(MOODLE_URL)? otherwise REFUSE (the token never goes to a foreign host)
@@ -401,7 +409,7 @@ the test fails with a clear message (rather than receiving a 404).
 | textfmt | Date/Relative/plural forms/DST/midnight; StripHTML (table of ~20 cases from real descriptions) | pure |
 | study | ResolveCourse (id, substring, case, umlauts, ambiguity, past); Merge (both sources, calendar only, assign only, due=0, due-date precedence, extension, outside window, overdue); BuildTree with subsections; search/ranking; partial error policy | fake Source, clock `2026-10-02 12:00 Vienna` |
 | render | output of every tool | golden files, `go test ./... -update` |
-| tools (e2e) | 8 tools via `mcp.NewInMemoryTransports()`: list_tools (schemas), call_tool → golden; invalidtoken → `IsError` with a clear text | httptest + real client + in-memory MCP |
+| tools (e2e) | 9 tools via `mcp.NewInMemoryTransports()`: list_tools (schemas), call_tool → golden; invalidtoken → `IsError` with a clear text | httptest + real client + in-memory MCP |
 
 **Makefile**: `build`, `test` (`-race -count=1`), `cover`, `lint` (golangci-lint:
 govet, staticcheck, errcheck, gosec, forbidigo), `golden` (`-update`).
