@@ -17,6 +17,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 )
 
 const (
@@ -267,9 +269,18 @@ func sleep(ctx context.Context, d time.Duration) error {
 	}
 }
 
+// snippet is the start of a response body for error messages, redacted.
+// Invalid UTF-8 and control characters become spaces first: the error prints
+// the snippet with %q, and an escape like \xb0 or \x00 followed by the rest
+// of the body could otherwise spell the token in the printed text.
 func (c *Client) snippet(body []byte) string {
 	const n = 200
-	s := string(bytes.TrimSpace(body))
+	s := strings.Map(func(r rune) rune {
+		if r == utf8.RuneError || unicode.IsControl(r) {
+			return ' '
+		}
+		return r
+	}, strings.ToValidUTF8(string(bytes.TrimSpace(body)), " "))
 	if len([]rune(s)) > n {
 		s = string([]rune(s)[:n]) + "…"
 	}

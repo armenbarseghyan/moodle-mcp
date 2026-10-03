@@ -120,4 +120,6 @@ exit /b 0
 	if ($fake) { Stop-Process -Id $fake.Id -ErrorAction SilentlyContinue }
 	Remove-Item -Recurse -Force $Work -ErrorAction SilentlyContinue
 }
+# Explicit: the exit code would otherwise be that of the last setup.ps1 run.
 if ($script:fail -ne 0) { exit 1 }
+exit 0

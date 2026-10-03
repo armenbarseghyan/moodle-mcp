@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -180,7 +181,8 @@ func TestDownload(t *testing.T) {
 			if !fi.ModTime().Equal(lastMod) {
 				t.Errorf("mtime = %v, want Last-Modified %v", fi.ModTime(), lastMod)
 			}
-			if fi.Mode().Perm() != 0o644 {
+			// Windows has no Unix permission bits: files are 0666 or read-only 0444.
+			if runtime.GOOS != "windows" && fi.Mode().Perm() != 0o644 {
 				t.Errorf("mode = %v", fi.Mode().Perm())
 			}
 			assertNoToken(t, "result URL", res.URL)

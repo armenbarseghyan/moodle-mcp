@@ -17,7 +17,7 @@ export GOMODCACHE GOCACHE
 WORK="$(mktemp -d)"
 FAKE_PID=""
 cleanup() {
-	[ -n "$FAKE_PID" ] && kill "$FAKE_PID" 2>/dev/null || true
+	if [ -n "$FAKE_PID" ]; then kill "$FAKE_PID" 2>/dev/null || true; fi
 	chmod -R u+w "$WORK" 2>/dev/null || true
 	rm -rf "$WORK"
 }

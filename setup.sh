@@ -98,7 +98,9 @@ else
 	else
 		actual="$(sha256sum "$tmp/$asset" | cut -d' ' -f1)"
 	fi
-	[ -n "$expected" ] && [ "$expected" = "$actual" ] || die "checksum mismatch for $asset — not installing it."
+	if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+		die "checksum mismatch for $asset — not installing it."
+	fi
 	mv "$tmp/$asset" "$BIN"
 	chmod +x "$BIN"
 	ok "downloaded and verified $BIN"
@@ -117,7 +119,9 @@ else
 	read -r -p "    FH username: " username
 	read -r -s -p "    FH password (hidden): " password
 	printf '\n'
-	[ -n "$username" ] && [ -n "$password" ] || die "username and password are required."
+	if [ -z "$username" ] || [ -z "$password" ]; then
+		die "username and password are required."
+	fi
 	response="$(printf '%s' "$password" | curl -sS -X POST "$MOODLE_URL/login/token.php" \
 		--data-urlencode "username=$username" \
 		--data-urlencode "password@-" \
