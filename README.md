@@ -1,36 +1,121 @@
 # moodle-mcp
 
 [![CI](https://github.com/armenbarseghyan/moodle-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/armenbarseghyan/moodle-mcp/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/armenbarseghyan/moodle-mcp)](https://github.com/armenbarseghyan/moodle-mcp/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A read-only MCP server for Moodle (FH JOANNEUM, Moodle 4.5), written in Go. It answers study
-questions — what is due, what teachers posted, where a piece of material is — by combining
-several Moodle Web Service calls behind each tool. It cannot change anything in Moodle: the
-client refuses every function outside an allowlist of 10 getters.
+**Your FH JOANNEUM Moodle inside Claude Code or Codex.** Ask about deadlines, materials,
+grades and announcements in plain language (any language), and get answers with links that
+open in your browser.
 
-## Quick start
+> *"What's due this week?"* · *"How do I connect to the lab VM from home?"* ·
+> *"What do I need to do for Homework R2?"* · *"How are my grades?"* ·
+> *"Make a dashboard of my next two weeks"* · *"Was gibt es Neues in PDP?"*
+
+It is **read-only**: it can read your courses, but it cannot submit, post or change
+anything in Moodle. It runs on your own computer, with your own account.
+
+---
+
+## Install
+
+**You need:** [Claude Code](https://claude.com/claude-code) or the
+[Codex CLI](https://developers.openai.com/codex), [git](https://git-scm.com/downloads), and your
+FH username and password. Go is *not* needed. Without Go, the setup downloads a ready-made,
+checksum-verified program.
+
+### macOS / Linux
+
+Open a terminal and run:
 
 ```bash
 git clone https://github.com/armenbarseghyan/moodle-mcp.git
-cd moodle-mcp && ./setup.sh                              # macOS / Linux, any shell
-powershell -ExecutionPolicy Bypass -File .\setup.ps1     # Windows
 ```
-
-The setup builds the server (or downloads a verified release binary when Go is missing), asks
-for your FH login once, gets and checks the token, registers the server with Claude Code and/or Codex (whichever is installed) and
-links the skills. Step-by-step guide, the token pitfalls and troubleshooting:
-**[docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md)**. Architecture and design decisions:
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-## Build
-
-Requires Go 1.26 (any Go 1.21+ downloads the right toolchain automatically).
 
 ```bash
-make build        # → bin/moodle-mcp
+cd moodle-mcp && ./setup.sh
 ```
 
-## Environment
+### Windows
+
+Open **PowerShell** and run:
+
+```powershell
+git clone https://github.com/armenbarseghyan/moodle-mcp.git
+cd moodle-mcp
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+### Then
+
+1. The script asks for your **FH username and password once**. They go only to
+   `moodle.fh-joanneum.at` and are not saved anywhere.
+2. Answer **Y** when it offers to install the skills (recommended).
+3. When it prints `Done`, **restart Claude Code / Codex** and ask:
+   *"check my moodle connection"*.
+
+The script connects every client it finds. Use `--claude` or `--codex` (`-Claude` / `-Codex`
+on Windows) to pick one. Want the details of each step, the manual way, or help with an
+error? → **[Setup guide](docs/STUDENT-SETUP.md)**.
+
+### First thing to try
+
+Ask *"set up my course profiles from the syllabi"* once per semester. The assistant reads every
+course's syllabus and saves how it is graded (weights, must-pass parts, attendance), so later
+answers about grades and priorities follow the real rules.
+
+## Update
+
+```bash
+cd moodle-mcp && git pull && ./setup.sh
+```
+
+On Windows run `git pull`, then `setup.ps1` again as above. It asks for your login again and
+replaces the old registration.
+
+## Uninstall
+
+```bash
+claude mcp remove moodle -s user     # Claude Code
+codex mcp remove moodle              # Codex
+```
+
+Then delete the `moodle-mcp` folder and the `moodle-*` links in `~/.claude/skills` and
+`~/.agents/skills`.
+
+## If something doesn't work
+
+| Problem | Fix |
+|---|---|
+| The assistant has no Moodle tools | restart Claude Code / Codex; still nothing → run the setup again |
+| "token is invalid or revoked" | run the setup again |
+| Moodle's *Security keys* page is empty | that's normal for students; the setup gets the token another way |
+| `Failed to connect` / `CONNECTION_CLOSED` | see [Troubleshooting](docs/STUDENT-SETUP.md#troubleshooting) |
+| `running scripts is disabled` (Windows) | start it exactly as shown: `powershell -ExecutionPolicy Bypass -File .\setup.ps1` |
+
+Or just ask the assistant *"moodle doesn't work, help me"*. The `moodle-setup` skill walks
+through the checks.
+
+## What's inside
+
+- **8 tools:** deadlines (assignments and quizzes, with submission status), announcements,
+  courses, course contents, search (also *inside* PDFs, Word, PowerPoint, notebooks, with
+  page numbers), grades with feedback, file download, and a self-check.
+- **7 [skills](skills/README.md)** on top of them: briefing, finding and quoting material,
+  working through an assignment, grades, a visual dashboard, course profiles from the
+  syllabi, and setup diagnostics.
+
+**Privacy.** The server talks only to `moodle.fh-joanneum.at`, and your token stays in your
+client's config on your computer. It is masked in all logs and output. What you ask about is
+sent to the assistant like anything else you type into a chat. See [SECURITY.md](SECURITY.md).
+
+---
+
+## Reference
+
+Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+### Environment
 
 | Variable | Required | Default | Meaning |
 |---|---|---|---|
@@ -45,11 +130,7 @@ The token is read from the environment only. Logs go to stderr; the token is mas
 (`[REDACTED]`) in logs, errors and tool output. If the variables are missing the server still
 starts and every tool explains what is missing.
 
-Token: `./setup.sh` gets it from `login/token.php` (service `moodle_mobile_app`). The
-*Security keys* page stays empty for students, which is expected. See the
-[setup guide](docs/STUDENT-SETUP.md#about-the-token--four-pitfalls).
-
-## Connect to Claude Code or Codex
+### Registering by hand
 
 `setup.sh` does this; by hand (the path must be absolute). Codex: the same with
 `codex mcp add moodle --env … --env … -- <path>`.
@@ -63,7 +144,7 @@ claude mcp add moodle --scope user \
 
 Check: `moodle_whoami` shows the user, the site version and any missing functions.
 
-## HTTP instead of stdio
+### HTTP instead of stdio
 
 ```bash
 MCP_HTTP_TOKEN=<secret> ./bin/moodle-mcp -http 127.0.0.1:8765
@@ -79,7 +160,7 @@ LAN) without a token, because it holds your Moodle token.
 claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "Authorization: Bearer <secret>"
 ```
 
-## Tools
+### Tools
 
 | Tool | Parameters | What it does |
 |---|---|---|
@@ -107,17 +188,10 @@ skipped. PDFs are read in pure Go (a vendored, patched `ledongthuc/pdf`, see
 `third_party/ledongthuc-pdf/PATCHES.md`); spaces are rebuilt from glyph positions, and words of
 6+ letters also match ignoring spaces, since PDFs often lose or invent them.
 
-## Skills
+### Development
 
-Seven skills (Claude Code and Codex) — briefing, finding material and answering from it, working through an
-assignment, grades, a visual dashboard, course profiles from the syllabi, and diagnostics — live
-in [skills/](skills/README.md):
+Requires Go 1.26 (any Go 1.21+ downloads the right toolchain automatically).
 
-```bash
-make install-skills
-```
-
-## Development
 
 ```bash
 make test      # go test -race ./...
