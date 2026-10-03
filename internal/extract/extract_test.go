@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/extract"
-	"moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/extract"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
 )
 
 func readFileF(f *testing.F, name string) []byte {

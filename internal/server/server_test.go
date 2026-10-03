@@ -10,12 +10,12 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"moodle-mcp/internal/cache"
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
-	"moodle-mcp/internal/server"
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/tools"
+	"github.com/armenbarseghyan/moodle-mcp/internal/cache"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/server"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/tools"
 )
 
 const httpToken = "local-secret"

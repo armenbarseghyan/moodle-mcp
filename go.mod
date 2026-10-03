@@ -1,4 +1,4 @@
-module moodle-mcp
+module github.com/armenbarseghyan/moodle-mcp
 
 go 1.26.0
 

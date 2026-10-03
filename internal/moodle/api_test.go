@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
 )
 
 // Every fixture must decode into its wire type. This catches drift between

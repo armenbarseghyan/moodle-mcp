@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
 )
 
 func TestRedact(t *testing.T) {

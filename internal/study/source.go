@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"time"
 
-	"moodle-mcp/internal/extract"
-	"moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/extract"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
 )
 
 // Fetched is a value with the time it was fetched from Moodle. Values served

@@ -13,8 +13,8 @@ import (
 	"github.com/google/jsonschema-go/jsonschema"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"moodle-mcp/internal/render"
-	"moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/render"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
 )
 
 // Deps are the tools' dependencies.

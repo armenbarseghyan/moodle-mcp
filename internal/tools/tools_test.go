@@ -15,12 +15,12 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"moodle-mcp/internal/cache"
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/textfmt"
-	"moodle-mcp/internal/tools"
+	"github.com/armenbarseghyan/moodle-mcp/internal/cache"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/tools"
 )
 
 var update = flag.Bool("update", false, "rewrite golden files")

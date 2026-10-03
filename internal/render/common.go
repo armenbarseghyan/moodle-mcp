@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 // MaxChars bounds one tool answer. Lines beyond it are summarised.
@@ -136,8 +136,8 @@ func ErrorText(err error) string {
 	case err == nil:
 		return ""
 	case errors.Is(err, moodle.ErrInvalidToken):
-		return p.Sprintf("The Moodle token is invalid or revoked. Create a new one in Moodle " +
-			"(Profile → Preferences → Security keys, service moodle_mobile_app) and update MOODLE_TOKEN.")
+		return p.Sprintf("The Moodle token is invalid or revoked. Get a new one by running ./setup.sh " +
+			"(setup.ps1 on Windows) in the moodle-mcp folder again; see docs/STUDENT-SETUP.md.")
 	case errors.Is(err, moodle.ErrAccessDenied):
 		return p.Sprintf("Moodle refused the call (access control): the function is not part of the token's service or is disabled for your role.")
 	case errors.Is(err, moodle.ErrNotAccessible):

@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 // OverdueLookback is how far back unsubmitted assignments are reported.

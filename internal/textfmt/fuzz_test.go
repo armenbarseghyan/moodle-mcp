@@ -5,7 +5,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 func FuzzStripHTML(f *testing.F) {

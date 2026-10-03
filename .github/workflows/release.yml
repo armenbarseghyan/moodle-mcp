@@ -1,0 +1,39 @@
+name: Release
+
+# Push a tag like v1.0.0 to publish binaries. setup.sh / setup.ps1 download them
+# (with checksums.txt) on machines without Go.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go test -count=1 ./...
+      - name: Build
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          set -eu
+          mkdir dist
+          for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+            os="${target%/*}" arch="${target#*/}" ext=""
+            [ "$os" = windows ] && ext=".exe"
+            GOOS="$os" GOARCH="$arch" go build -trimpath \
+              -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" \
+              -o "dist/moodle-mcp-$os-$arch$ext" ./cmd/moodle-mcp
+          done
+          (cd dist && sha256sum moodle-mcp-* > checksums.txt)
+          cat dist/checksums.txt
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes

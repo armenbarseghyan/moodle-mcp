@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
 )
 
 func TestToWebserviceURL(t *testing.T) {

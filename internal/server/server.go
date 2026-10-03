@@ -16,7 +16,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/auth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"moodle-mcp/internal/tools"
+	"github.com/armenbarseghyan/moodle-mcp/internal/tools"
 )
 
 // MCPPath is where the streamable HTTP endpoint is mounted.

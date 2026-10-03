@@ -68,7 +68,7 @@ Backoff: 300 ms ± 30 % jitter, set via `Config.RetryDelay` (0 in tests).
 ### 2.4 Error classification (by `errorcode`; the site's messages are in German)
 | errorcode | sentinel | what the user sees | fatal for the request* |
 |---|---|---|---|
-| `invalidtoken` | `ErrInvalidToken` | "The Moodle token is invalid or revoked. Create a new one: Profil → "Sicherheitsschlüssel" (security keys), update MOODLE_TOKEN." | yes |
+| `invalidtoken` | `ErrInvalidToken` | "The Moodle token is invalid or revoked. Get a new one by running ./setup.sh (setup.ps1 on Windows) again." | yes |
 | `accessexception` | `ErrAccessDenied` | "Function X is not available to the moodle_mobile_app service (access control)." | yes |
 | `requireloginerror` | `ErrNotAccessible` | "The course or activity is not accessible (hidden or restricted)." | no |
 | `sitemaintenance` | `ErrMaintenance` | "Moodle is in maintenance mode." | yes |
@@ -441,7 +441,7 @@ in `Normalize` failed under parallel calls; it is now created per call.
 3. Grades are not cached.
 4. The common prefix of course names is stripped in lists.
 5. No `make contract` / live tests (live checks are manual, with a smoke client).
-6. Go: `GOTOOLCHAIN=auto` (go-sdk v1.8 requires 1.25).
+6. Go: `GOTOOLCHAIN=auto` (go.mod says 1.26; go-sdk v1.8 itself requires 1.25).
 7. Output is English by default. Other languages are planned via the message catalog
    (`textfmt.SetLanguage` + translations of the English keys), with no changes to output code.
 

@@ -21,16 +21,22 @@ start. Suggest the user runs (run it yourself only if you have a shell and they 
 claude mcp get moodle
 ```
 
-- `✘ Failed to connect` / `Connection closed` — check the binary path (`Command:`), that it is
-  built (`make build` in the repository) and starts: `<path>/moodle-mcp -version`.
-- No server — register it. The user pastes the token themselves; never ask them to send the
-  token in the chat:
+- **Not registered, or anything about the token** — the fix is the setup script in the
+  repository folder. It builds the server, gets the token, checks it, and registers the
+  absolute path. The user runs it in their own terminal because it asks for the FH password,
+  which must never go into the chat:
+  - macOS / Linux (any shell): `./setup.sh`
+  - Windows: `powershell -ExecutionPolicy Bypass -File .\setup.ps1`
 
-```bash
-claude mcp add moodle -s user -e MOODLE_URL=https://moodle.fh-joanneum.at -e MOODLE_TOKEN=<token> -- <path>/bin/moodle-mcp
-```
-
-Claude Code needs a restart after registering.
+  No repository yet: `git clone https://github.com/armenbarseghyan/moodle-mcp.git`, then the
+  same. Claude Code needs a restart afterwards.
+- **`✘ Failed to connect` / `CONNECTION_CLOSED` with no details** — the binary crashed at
+  startup. Have the user run it by hand with the same variables. The error is on stderr:
+  `MOODLE_URL=https://moodle.fh-joanneum.at MOODLE_TOKEN=<token> <path>/bin/moodle-mcp`.
+  If it starts and waits silently, the binary is fine and the registration is wrong: re-run
+  the setup.
+- **`ENOENT` / command not found** — registered with a relative path or bare name. Claude Code
+  starts servers with a reduced `PATH`, so it must be absolute. Re-run the setup.
 
 ## 2. Token and site
 
@@ -39,37 +45,32 @@ Call `moodle_whoami`. It always goes to Moodle directly.
 | Result | Meaning | What to do |
 |---|---|---|
 | name, login, all required functions present | everything works | the problem was transient or in the request |
-| "invalid or revoked token" | token reset or expired | new token (see "Getting a token" below), then `claude mcp remove moodle -s user` and `add` again with the new token |
-| "MOODLE_TOKEN / MOODLE_URL not set" | server started without env | re-register with `-e …` |
+| "invalid or revoked token" | token revoked, or a wrong value was registered (e.g. 64 chars) | the user re-runs `./setup.sh` / `setup.ps1` (see step 1) |
+| "MOODLE_TOKEN / MOODLE_URL not set" | server started without env | re-run the setup |
 | "access control" / functions missing | the token's service lacks functions | the token must belong to the `moodle_mobile_app` service; another service won't do |
 | "maintenance" | Moodle is in maintenance mode | wait |
 | "no connection", timeout | network, VPN or site down | open the site in a browser; off campus Moodle usually works without VPN |
 
 ## Getting a token
 
-The token must belong to the **Moodle mobile web service** (`moodle_mobile_app`). At FH
-JOANNEUM the app signs in with the FH username and password (no browser SSO), so there are
-three ways, from most to least convenient:
+The token belongs to the **Moodle mobile web service** (`moodle_mobile_app`). The setup
+script (step 1) gets it. Explain these points when the user does it by hand or is confused:
 
-1. **Security keys page.** Moodle in the browser → user menu → *Einstellungen / Preferences* →
-   *Sicherheitsschlüssel / Security keys*. Copy the key of "Moodle mobile web service"; *Reset*
-   issues a new one (and revokes the old one).
-2. **No key listed?** Sign in once to the official **Moodle app** (site
-   `https://moodle.fh-joanneum.at`). That creates the key; reload the Security keys page.
-3. **From the terminal** (the official endpoint the app uses). The password is typed into the
-   user's own terminal, never into the chat:
+- **The "Security keys" page (`/user/managetoken.php`) is empty for FH students** and has no
+  create button. Students lack `moodle/webservice:createtoken`. This is not a dead end: the
+  token comes from `login/token.php` with `service=moodle_mobile_app`, using the FH username
+  and password, just like the official Moodle app.
+- **Use `token`, not `privatetoken`.** The answer is `{"token":"…","privatetoken":"…"}`. Only
+  `token` (32 hex characters) is the API key; both together are 64 characters and give
+  `invalidtoken`.
+- **Shell differences** if they read the password themselves: zsh needs `read -rs "?Prompt " P`;
+  bash's `read -rsp` fails in zsh with "no coprocess". Pasting several lines at once makes
+  `read` swallow the next line as the password.
+- **curl encoding:** `--data-urlencode password@-` (name before `@`). With `@-` alone, curl
+  encodes the `=` too and Moodle answers `missingparam`.
 
-```bash
-read -r -p "FH username: " U; read -r -s -p "FH password: " P; echo
-curl -s https://moodle.fh-joanneum.at/login/token.php --data-urlencode "username=$U" --data-urlencode "password=$P" --data-urlencode "service=moodle_mobile_app"; unset P
-```
-
-   The answer is `{"token":"…","privatetoken":…}`; only `token` is needed. An `invalidlogin`
-   error means wrong credentials; `enablewsdescription` means the service is disabled — then
-   ask FH IT.
-
-The full step-by-step guide for new users (also for classmates) is in the repository:
-`docs/STUDENT-SETUP.md` (English) and `docs/STUDENT-SETUP.ru.md` (Russian).
+Manual commands for every OS are in `docs/STUDENT-SETUP.md` → *Manual setup*. Point the user
+there instead of improvising. Never ask for the password or the token in the chat.
 
 ## 3. Works, but data seems missing
 

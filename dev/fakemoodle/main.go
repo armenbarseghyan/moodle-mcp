@@ -17,7 +17,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
 )
 
 type logReporter struct{}
@@ -30,7 +30,13 @@ func (logReporter) Cleanup(func())                    {}
 func main() {
 	urlFile := flag.String("url-file", "", "also write the server URL to this file")
 	printToken := flag.Bool("token", false, "print the accepted token and exit")
+	printCreds := flag.Bool("creds", false, "print the accepted username and password (two lines) and exit")
 	flag.Parse()
+	if *printCreds {
+		_, _ = fmt.Fprintln(os.Stdout, moodletest.Username)
+		_, _ = fmt.Fprintln(os.Stdout, moodletest.Password)
+		return
+	}
 	if *printToken {
 		_, _ = fmt.Fprintln(os.Stdout, moodletest.Token)
 		return

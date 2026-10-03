@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
 )
 
 // The server must stay read-only: every allowlisted function is a getter, and

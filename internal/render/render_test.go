@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/render"
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/render"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 type timeoutErr struct{}
@@ -28,7 +28,7 @@ func TestErrorText(t *testing.T) {
 		want string
 	}{
 		{"invalid token", &moodle.Error{ErrorCode: "invalidtoken"}, "The Moodle token is invalid or revoked"},
-		{"wrapped invalid token", fmt.Errorf("courses: %w", &moodle.Error{ErrorCode: "invalidtoken"}), "MOODLE_TOKEN"},
+		{"wrapped invalid token", fmt.Errorf("courses: %w", &moodle.Error{ErrorCode: "invalidtoken"}), "setup.sh"},
 		{"access control", &moodle.Error{ErrorCode: "accessexception"}, "access control"},
 		{"require login", &moodle.Error{ErrorCode: "requireloginerror"}, "not accessible"},
 		{"maintenance", &moodle.Error{ErrorCode: "sitemaintenance"}, "maintenance mode"},

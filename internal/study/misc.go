@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
 )
 
 // DownloadResult answers moodle_download.

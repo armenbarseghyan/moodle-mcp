@@ -1,16 +1,30 @@
 # moodle-mcp
 
+[![CI](https://github.com/armenbarseghyan/moodle-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/armenbarseghyan/moodle-mcp/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A read-only MCP server for Moodle (FH JOANNEUM, Moodle 4.5), written in Go. It answers study
 questions — what is due, what teachers posted, where a piece of material is — by combining
 several Moodle Web Service calls behind each tool. It cannot change anything in Moodle: the
 client refuses every function outside an allowlist of 10 getters.
 
-Architecture and design decisions: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Setting it up as a student (token, build, Claude Code / Claude Desktop): [docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md).
+## Quick start
 
-## Install
+```bash
+git clone https://github.com/armenbarseghyan/moodle-mcp.git
+cd moodle-mcp && ./setup.sh                              # macOS / Linux, any shell
+powershell -ExecutionPolicy Bypass -File .\setup.ps1     # Windows
+```
 
-Requires Go 1.25+ (with `GOTOOLCHAIN=auto` the right version is downloaded automatically).
+The setup builds the server (or downloads a verified release binary when Go is missing), asks
+for your FH login once, gets and checks the token, registers the server with Claude Code and
+links the skills. Step-by-step guide, the token pitfalls and troubleshooting:
+**[docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md)**. Architecture and design decisions:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Build
+
+Requires Go 1.26 (any Go 1.21+ downloads the right toolchain automatically).
 
 ```bash
 make build        # → bin/moodle-mcp
@@ -31,10 +45,13 @@ The token is read from the environment only. Logs go to stderr; the token is mas
 (`[REDACTED]`) in logs, errors and tool output. If the variables are missing the server still
 starts and every tool explains what is missing.
 
-Token: Moodle → Profile → Preferences → Security keys, service *Moodle mobile web service*
-(details and alternatives in the [setup guide](docs/STUDENT-SETUP.md)).
+Token: `./setup.sh` gets it from `login/token.php` (service `moodle_mobile_app`). The
+*Security keys* page stays empty for students, which is expected. See the
+[setup guide](docs/STUDENT-SETUP.md#about-the-token--four-pitfalls).
 
 ## Connect to Claude Code
+
+`setup.sh` does this; by hand (the path must be absolute):
 
 ```bash
 claude mcp add moodle --scope user \
@@ -108,7 +125,12 @@ make lint      # go vet + golangci-lint v2 (via go run, nothing to install)
 make golden    # rewrite the expected tool output (testdata/golden)
 make fuzz      # all fuzz targets, FUZZTIME=30s each (PDF/zip/HTML parsing, responses, links, search)
 make dev       # bin/fakemoodle (fake Moodle) and bin/mcpcall (call a tool from the shell)
+make setup-test  # setup.sh (and setup.ps1's login, if pwsh is installed) end to end against the fake Moodle
 ```
+
+`make lint` also runs `shellcheck`. On Windows, `dev/setup_test.ps1` tests `setup.ps1`. CI runs all
+of this on Linux, macOS and Windows. Pushing a `v*` tag publishes release binaries plus
+`checksums.txt`; the setup scripts download them on machines without Go.
 
 Skill evals: `dev/skill-evals/` holds the prompts, the grader and how to run them.
 

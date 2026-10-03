@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 const (

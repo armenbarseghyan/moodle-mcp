@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 func vie(s string) time.Time {

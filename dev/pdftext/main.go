@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"moodle-mcp/internal/extract"
+	"github.com/armenbarseghyan/moodle-mcp/internal/extract"
 )
 
 func main() {

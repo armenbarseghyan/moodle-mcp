@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"moodle-mcp/internal/extract"
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/moodletest"
-	"moodle-mcp/internal/study"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/extract"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodletest"
+	"github.com/armenbarseghyan/moodle-mcp/internal/study"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 const base = "https://moodle.example.test"

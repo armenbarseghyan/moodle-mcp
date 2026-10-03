@@ -28,9 +28,19 @@ type Reporter interface {
 	Cleanup(func())
 }
 
+// Username and Password are the only credentials login/token.php accepts.
+// The password contains characters that break naive form encoding.
+const (
+	Username = "s00000"
+	Password = "p@ss w&rd=1 ü" //nolint:gosec // fake credential of the test server
+)
+
+// PrivateToken is returned next to Token by login/token.php, like Moodle does.
+const PrivateToken = "9f8e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a39281706f5e4d3c2b1a0" //nolint:gosec // fake, test server only
+
 // Token is the only token the fake server accepts. Any other token gets the
 // real invalidtoken fixture back, like the real site would answer.
-const Token = "f4k3t0k3n0123456789abcdef0123456"
+const Token = "f4c3b00c0123456789abcdef01234567"
 
 // Resp is one scripted response.
 type Resp struct {
@@ -189,6 +199,8 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		s.files.ServeHTTP(w, r)
 	case r.URL.Path == "/webservice/rest/server.php":
 		s.serveREST(w, r)
+	case r.URL.Path == "/login/token.php":
+		s.serveTokenLogin(w, r)
 	default:
 		s.t.Errorf("moodletest: unexpected path %s", r.URL.Path)
 		http.NotFound(w, r)
@@ -227,6 +239,28 @@ func (s *Server) serveREST(w http.ResponseWriter, r *http.Request) {
 		resp.Body = bytes.ReplaceAll(resp.Body, []byte(strings.ReplaceAll(s.rewrite, "/", `\/`)), []byte(strings.ReplaceAll(s.URL, "/", `\/`)))
 	}
 	write(w, r, resp)
+}
+
+// serveTokenLogin imitates login/token.php: a POST with username, password
+// and service=moodle_mobile_app returns {"token","privatetoken"}; anything
+// else returns Moodle's error shape.
+func (s *Server) serveTokenLogin(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	s.calls["token.php"]++
+	s.mu.Unlock()
+	w.Header().Set("Content-Type", "application/json")
+	switch {
+	case r.Method != http.MethodPost:
+		_, _ = w.Write([]byte(`{"error":"POST required","errorcode":"invalidrequest"}`))
+	case !r.PostForm.Has("username") || !r.PostForm.Has("password") || !r.PostForm.Has("service"):
+		_, _ = w.Write([]byte(`{"error":"A required parameter (username) was missing","errorcode":"missingparam"}`))
+	case r.PostForm.Get("service") != "moodle_mobile_app":
+		_, _ = w.Write([]byte(`{"error":"Web service is not available","errorcode":"servicenotavailable"}`))
+	case r.PostForm.Get("username") != Username || r.PostForm.Get("password") != Password:
+		_, _ = w.Write([]byte(`{"error":"Invalid login, please try again","errorcode":"invalidlogin"}`))
+	default:
+		_, _ = w.Write([]byte(`{"token":"` + Token + `","privatetoken":"` + PrivateToken + `"}`))
+	}
 }
 
 func write(w http.ResponseWriter, r *http.Request, resp Resp) {

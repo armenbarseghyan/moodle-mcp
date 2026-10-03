@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"moodle-mcp/internal/moodle"
-	"moodle-mcp/internal/textfmt"
+	"github.com/armenbarseghyan/moodle-mcp/internal/moodle"
+	"github.com/armenbarseghyan/moodle-mcp/internal/textfmt"
 )
 
 const maxSubsectionDepth = 3

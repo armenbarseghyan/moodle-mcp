@@ -1,13 +1,16 @@
 BIN     := bin/moodle-mcp
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 
-.PHONY: build test cover lint golden fuzz dev install-skills uninstall-skills
+.PHONY: build test setup-test cover lint golden fuzz dev install-skills uninstall-skills
 
 build:
 	go build -trimpath -ldflags "-s -w -X main.version=$(VERSION)" -o $(BIN) ./cmd/moodle-mcp
 
 test:
 	go test -race -count=1 ./...
+
+setup-test:  # ./setup.sh end to end against the fake Moodle and a stub claude CLI
+	dev/setup_test.sh
 
 cover:
 	go test -race -count=1 -coverprofile=coverage.out ./...
@@ -16,6 +19,7 @@ cover:
 lint:
 	go vet ./...
 	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...
+	shellcheck setup.sh dev/*.sh
 
 FUZZTIME ?= 30s
 

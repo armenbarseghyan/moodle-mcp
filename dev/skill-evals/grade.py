@@ -129,7 +129,7 @@ CHECKS = {
         lang_en(a),
         ("Diagnoses the revoked/invalid token", has(a, r"token[^\n]{0,40}(invalid|revoked)|(invalid|revoked)[^\n]{0,40}token"),
          find(a, r"invalid|revoked")),
-        ("Explains where to get a new token (Security keys)", has(a, r"Security keys|Sicherheitsschl"), find(a, r"Security keys|Sicherheitsschl")),
+        ("Explains how to get a new token (setup script / token.php)", has(a, r"setup\.(sh|ps1)|login/token\.php"), find(a, r"setup\.(sh|ps1)|login/token\.php")),
         ("Gives the re-registration command", has(a, r"claude mcp add"), find(a, r"claude mcp add")),
         ("Tells the student not to paste the token into the chat",
          has(a, r"(don't|do not|never)[^\n]{0,60}(paste|send|share|post)[^\n]{0,60}(chat|here|conversation)"), find(a, r"chat")),
