@@ -53,10 +53,12 @@ func (c *Client) parseException(fn string, body []byte) error {
 	if msg == "" {
 		msg = e.Error
 	}
+	// Every field ends up in error text, so every field is redacted; real error
+	// codes ("invalidtoken", …) never contain the token and stay matchable.
 	return &Error{
 		Function:  fn,
-		Exception: e.Exception,
-		ErrorCode: e.ErrorCode,
+		Exception: c.Redact(e.Exception),
+		ErrorCode: c.Redact(e.ErrorCode),
 		Message:   c.Redact(msg),
 		DebugInfo: c.Redact(e.DebugInfo),
 	}

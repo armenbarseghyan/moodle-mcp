@@ -1,14 +1,14 @@
 ---
 name: moodle-setup
-description: Diagnose and set up the Moodle MCP server (moodle-mcp) — token, connection, available functions, installing and connecting it to Claude Code, HTTP mode. Use this skill whenever moodle_* tools return an error ("invalid token", "MOODLE_TOKEN not set", "no connection", timeout), when the user says "moodle isn't working", "the moodle mcp won't connect", "how do I renew my token", "how do I connect moodle to claude", "Moodle geht nicht", or when no moodle_* tools are available in the session at all.
+description: Diagnose and set up the Moodle MCP server (moodle-mcp) — token, connection, available functions, installing and connecting it to Claude Code or Codex, HTTP mode. Use this skill whenever moodle_* tools return an error ("invalid token", "MOODLE_TOKEN not set", "no connection", timeout), when the user says "moodle isn't working", "the moodle mcp won't connect", "how do I renew my token", "how do I connect moodle to claude", "connect moodle to codex", "Moodle geht nicht", or when no moodle_* tools are available in the session at all.
 allowed-tools: mcp__moodle__moodle_whoami
 ---
 
 # Diagnosing moodle-mcp
 
 The server is a read-only Go binary (`moodle-mcp`) that reads `MOODLE_URL` and `MOODLE_TOKEN`
-from its environment. Nearly every problem is the token, the network or the Claude Code
-registration. Go from simple to complex and tell the user what each step showed.
+from its environment. It works with Claude Code and with Codex. Nearly every problem is the
+token, the network or the client's registration. Go from simple to complex and tell the user what each step showed.
 
 Reply in the user's language.
 
@@ -18,7 +18,8 @@ If there are no `moodle_*` tools in the session, the server is not registered or
 start. Suggest the user runs (run it yourself only if you have a shell and they agree):
 
 ```bash
-claude mcp get moodle
+claude mcp get moodle      # Claude Code: also says whether it connects
+codex mcp get moodle       # Codex: shows the command and env (it doesn't start the server)
 ```
 
 - **Not registered, or anything about the token** — the fix is the setup script in the
@@ -29,14 +30,15 @@ claude mcp get moodle
   - Windows: `powershell -ExecutionPolicy Bypass -File .\setup.ps1`
 
   No repository yet: `git clone https://github.com/armenbarseghyan/moodle-mcp.git`, then the
-  same. Claude Code needs a restart afterwards.
+  same. By default it sets up every installed client; `--claude` / `--codex`
+  (`-Claude` / `-Codex`) pick one. Restart the client afterwards.
 - **`✘ Failed to connect` / `CONNECTION_CLOSED` with no details** — the binary crashed at
   startup. Have the user run it by hand with the same variables. The error is on stderr:
   `MOODLE_URL=https://moodle.fh-joanneum.at MOODLE_TOKEN=<token> <path>/bin/moodle-mcp`.
   If it starts and waits silently, the binary is fine and the registration is wrong: re-run
   the setup.
-- **`ENOENT` / command not found** — registered with a relative path or bare name. Claude Code
-  starts servers with a reduced `PATH`, so it must be absolute. Re-run the setup.
+- **`ENOENT` / command not found** — registered with a relative path or bare name. Claude Code and Codex
+  start servers with a reduced `PATH`, so it must be absolute. Re-run the setup.
 
 ## 2. Token and site
 

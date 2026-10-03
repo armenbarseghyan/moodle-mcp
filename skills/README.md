@@ -1,6 +1,6 @@
 # Skills for moodle-mcp
 
-Claude Code skills that turn the moodle-mcp tools into good study workflows. Written and
+Skills for Claude Code and Codex that turn the moodle-mcp tools into good study workflows. Written and
 tested in English.
 
 | Skill | Use it for | Example prompts |
@@ -16,11 +16,11 @@ tested in English.
 ## Install
 
 ```bash
-make install-skills      # symlinks every skill into ~/.claude/skills
+make install-skills      # symlinks every skill into ~/.claude/skills (setup.sh also does ~/.agents/skills for Codex)
 make uninstall-skills    # removes those symlinks again
 ```
 
-Symlinks mean `git pull` updates the skills without reinstalling. Restart Claude Code after
+Symlinks mean `git pull` updates the skills without reinstalling. Restart Claude Code (or Codex) after
 installing.
 
 ## Design rules shared by all skills

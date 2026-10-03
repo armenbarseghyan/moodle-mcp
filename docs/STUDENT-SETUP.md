@@ -1,6 +1,6 @@
 # moodle-mcp — setup guide for students
 
-Connect your FH JOANNEUM Moodle to Claude Code in about five minutes. Afterwards you can ask,
+Connect your FH JOANNEUM Moodle to Claude Code or Codex in about five minutes. Afterwards you can ask,
 in any language, things like *"what's due this week?"*, *"where is the guide for the lab VM?"*
 or *"what did the teacher write about my homework?"*.
 
@@ -19,7 +19,7 @@ You need:
 
 | | |
 |---|---|
-| **Claude Code** | CLI, desktop app or IDE extension — [claude.com/claude-code](https://claude.com/claude-code) |
+| **Claude Code or Codex** | Claude Code (CLI, desktop app or IDE extension) — [claude.com/claude-code](https://claude.com/claude-code) — or the Codex CLI — [developers.openai.com/codex](https://developers.openai.com/codex). With both installed, the setup connects both |
 | **git** | to get the code (or download the ZIP from GitHub) |
 | **Go** | optional (1.21 or newer; it fetches the 1.26 toolchain itself). With Go the server is built from source; without it the setup downloads a prebuilt, checksum-verified binary from the GitHub release |
 | **FH account** | your own FH username and password — every student uses **their own** token |
@@ -51,11 +51,12 @@ Works in Windows PowerShell 5.1 (built in) and PowerShell 7.
 ### Then
 
 The script asks for your FH username and password **once**, checks everything and registers the
-server. When it prints `Done`, **restart Claude Code** and ask *"check my moodle connection"*.
+server. When it prints `Done`, **restart Claude Code / Codex** and ask *"check my moodle connection"*.
 
 | Option | setup.sh | setup.ps1 |
 |---|---|---|
 | already have a token | `MOODLE_TOKEN=<token> ./setup.sh` | `$env:MOODLE_TOKEN = "<token>"` before the run |
+| only Claude Code / only Codex (default: every installed one) | `--claude` / `--codex` | `-Claude` / `-Codex` |
 | skip the skills | `--no-skills` | `-NoSkills` |
 | install skills without asking | `--skills` | `-Skills` |
 | another Moodle site | `--url https://…` | `-Url https://…` |
@@ -67,7 +68,7 @@ After `git pull`, run it again to get the new version.
 
 ## What the setup does
 
-1. **Checks** that `claude` (and on macOS/Linux `curl`) is installed.
+1. **Checks** which clients are installed (`claude`, `codex`) and, on macOS/Linux, `curl`.
 2. **Builds** `bin/moodle-mcp` with Go — or, without Go, downloads the release binary for
    your system and verifies its SHA-256 checksum before using it.
 3. **Gets your token** from `https://moodle.fh-joanneum.at/login/token.php`, the endpoint the
@@ -76,15 +77,18 @@ After `git pull`, run it again to get the new version.
 4. **Validates the token**: it must be exactly 32 hex characters (see pitfall 4 below).
 5. **Checks it against Moodle** (`core_webservice_get_site_info`) and prints
    `signed in as <your name>`. A bad token stops here, before anything is registered.
-6. **Registers** the server with Claude Code for your user
-   (`claude mcp add moodle --scope user -e MOODLE_URL=… -e MOODLE_TOKEN=… -- <absolute path>`)
-   and checks that it connects.
-7. **Links the skills** into `~/.claude/skills` (asks first). Skills teach Claude good
+6. **Registers** the server for your user:
+   Claude Code — `claude mcp add moodle --scope user -e MOODLE_URL=… -e MOODLE_TOKEN=… -- <absolute path>`,
+   then checks that it connects; Codex — `codex mcp add moodle --env MOODLE_URL=… --env MOODLE_TOKEN=… -- <absolute path>`
+   (written to `~/.codex/config.toml`).
+7. **Links the skills** (asks first) into `~/.claude/skills` for Claude Code and
+   `~/.agents/skills` for Codex. Skills teach the assistant good
    workflows on top of the tools: briefings, finding material and answering from it with page
    numbers, assignment checklists, grades with feedback, a visual dashboard and self-diagnosis.
    They are written in English and work in any language you write in.
 
-The token ends up only in Claude Code's own config (`~/.claude.json`), never in the repository.
+The token ends up only in the clients' own configs (`~/.claude.json`, `~/.codex/config.toml`),
+never in the repository.
 
 ---
 
@@ -191,8 +195,21 @@ claude mcp add moodle --scope user -e MOODLE_URL=https://moodle.fh-joanneum.at -
 ```
 
 Check with `claude mcp get moodle` — it should say **Connected** — and restart Claude Code.
-Skills: link (or copy) every folder of `skills/` into `~/.claude/skills/`; on macOS/Linux
-`make install-skills` does that.
+
+**Codex** — the same with `--env`, or add it to `~/.codex/config.toml`:
+
+```bash
+codex mcp add moodle --env MOODLE_URL=https://moodle.fh-joanneum.at --env MOODLE_TOKEN=<token> -- /Users/you/moodle-mcp/bin/moodle-mcp
+```
+
+```toml
+[mcp_servers.moodle]
+command = "/Users/you/moodle-mcp/bin/moodle-mcp"
+env = { MOODLE_URL = "https://moodle.fh-joanneum.at", MOODLE_TOKEN = "<token>" }
+```
+
+Skills: link (or copy) every folder of `skills/` into `~/.claude/skills/` (Claude Code) or
+`~/.agents/skills/` (Codex); on macOS/Linux `make install-skills` does the Claude Code part.
 
 **Claude desktop app** instead of Claude Code: *Settings → Developer → Edit Config*
 (`claude_desktop_config.json`), then restart the app:
@@ -237,7 +254,7 @@ Add them as further `-e NAME=value` when registering.
 
 ### `CONNECTION_CLOSED` / "Failed to connect" with no details
 
-The server crashed at startup and Claude Code doesn't show why. Run the binary by hand with the
+The server crashed at startup and the client doesn't show why. Run the binary by hand with the
 same variables and read what it prints on stderr:
 
 ```bash
@@ -251,9 +268,9 @@ $env:MOODLE_URL = "https://moodle.fh-joanneum.at"; $env:MOODLE_TOKEN = "<token>"
 If it starts fine it waits silently for input (stop it with Ctrl+C) — then the problem is the
 registration (path, variables): run the setup again.
 
-### `ENOENT` / "command not found" when Claude Code starts the server
+### `ENOENT` / "command not found" when the client starts the server
 
-Claude Code starts MCP servers with a reduced `PATH`, so a bare `moodle-mcp` or a relative
+Claude Code and Codex start MCP servers with a reduced `PATH`, so a bare `moodle-mcp` or a relative
 path is not found even if it works in your terminal. Register the **absolute** path — the setup
 script always does.
 

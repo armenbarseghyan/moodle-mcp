@@ -1,22 +1,27 @@
 <#
 .SYNOPSIS
-  Build moodle-mcp, get your Moodle token and register the server with Claude Code (Windows).
+  Build moodle-mcp, get your Moodle token and register the server with Claude Code and/or Codex (Windows).
 
 .DESCRIPTION
   The Windows counterpart of setup.sh. Safe to re-run: it replaces an existing registration.
 
     powershell -ExecutionPolicy Bypass -File .\setup.ps1             interactive
     $env:MOODLE_TOKEN = "…"; powershell -ExecutionPolicy Bypass -File .\setup.ps1
+    powershell -ExecutionPolicy Bypass -File .\setup.ps1 -Codex     only Codex (-Claude: only
+                                                                     Claude Code; default: every
+                                                                     one that is installed)
     powershell -ExecutionPolicy Bypass -File .\setup.ps1 -NoSkills
 
   Your password is sent only to $MoodleUrl/login/token.php (the endpoint the official
-  Moodle app uses) and is not stored. The token ends up only in Claude Code's config.
+  Moodle app uses) and is not stored. The token ends up only in the clients' configs.
   See docs/STUDENT-SETUP.md for what each step does and for troubleshooting.
 #>
 [CmdletBinding()]
 param(
 	[switch]$Skills,
 	[switch]$NoSkills,
+	[switch]$Claude,
+	[switch]$Codex,
 	[string]$Url
 )
 
@@ -44,6 +49,14 @@ function Die([string]$m) {
 }
 function Interactive { -not [Console]::IsInputRedirected }
 
+# Native runs an external program. Windows PowerShell 5.1 turns a program's
+# redirected stderr into error records, which 'Stop' would make fatal; exit
+# codes are checked explicitly instead.
+function Native([scriptblock]$cmd) {
+	$ErrorActionPreference = 'Continue'
+	& $cmd
+}
+
 # Moodle answers errors with HTTP 200 and {"errorcode": …}; this reads a field if present.
 function Field($obj, [string]$name) {
 	if ($obj -is [string]) { try { $obj = $obj | ConvertFrom-Json } catch { return '' } }
@@ -53,10 +66,21 @@ function Field($obj, [string]$name) {
 
 # ---------------------------------------------------------------------------
 Step 'Checking prerequisites'
-if (-not (Get-Command claude -ErrorAction SilentlyContinue)) {
-	Die "Claude Code (the 'claude' CLI) is not on your PATH. Install it from https://claude.com/claude-code and run this script again."
+$Clients = @()
+if ($Claude) { $Clients += 'claude' }
+if ($Codex) { $Clients += 'codex' }
+if ($Clients.Count -eq 0) {
+	$Clients = @('claude', 'codex') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue }
+	if (-not $Clients) {
+		Die "neither Claude Code ('claude') nor Codex ('codex') is on your PATH. Install one (https://claude.com/claude-code or https://developers.openai.com/codex) and run this script again."
+	}
+} else {
+	foreach ($c in $Clients) {
+		if (-not (Get-Command $c -ErrorAction SilentlyContinue)) { Die "'$c' is not on your PATH." }
+	}
 }
-Ok 'claude found'
+$Clients = @($Clients)
+Ok "setting up for: $($Clients -join ', ')"
 
 # ---------------------------------------------------------------------------
 Step 'Building the server'
@@ -64,11 +88,11 @@ New-Item -ItemType Directory -Force -Path (Join-Path $Root 'bin') | Out-Null
 if (Get-Command go -ErrorAction SilentlyContinue) {
 	$version = 'dev'
 	if (Get-Command git -ErrorAction SilentlyContinue) {
-		$v = & git -C $Root describe --tags --always --dirty 2>$null
+		$v = Native { git -C $Root describe --tags --always --dirty 2>$null }
 		if ($LASTEXITCODE -eq 0 -and $v) { $version = $v }
 	}
 	Push-Location $Root
-	try { & go build -trimpath -ldflags "-s -w -X main.version=$version" -o $Bin ./cmd/moodle-mcp }
+	try { Native { go build -trimpath -ldflags "-s -w -X main.version=$version" -o $Bin ./cmd/moodle-mcp } }
 	finally { Pop-Location }
 	if ($LASTEXITCODE -ne 0) { Die 'go build failed (the project needs Go 1.26; Go 1.21 or newer downloads it automatically).' }
 	Ok "built $Bin ($version)"
@@ -94,7 +118,7 @@ if (Get-Command go -ErrorAction SilentlyContinue) {
 	}
 	Ok "downloaded and verified $Bin"
 }
-& $Bin -version 2>$null | Out-Null
+Native { & $Bin -version 2>$null } | Out-Null
 if ($LASTEXITCODE -ne 0) { Die "$Bin does not run." }
 
 # ---------------------------------------------------------------------------
@@ -150,56 +174,77 @@ $code = Field $site 'errorcode'
 if ($code) { Die "Moodle refused the token ($code). Get a new one by running this script again without MOODLE_TOKEN." }
 Ok "signed in as $(Field $site 'fullname') ($(Field $site 'username'))"
 
-# ---------------------------------------------------------------------------
-Step 'Registering with Claude Code'
-& claude mcp get $ServerName *> $null
-if ($LASTEXITCODE -eq 0) {
-	& claude mcp remove $ServerName -s user *> $null
-	Ok "removed the previous '$ServerName' registration"
+# Both clients start MCP servers with a reduced PATH: register the absolute path.
+# Arguments go through arrays so PowerShell passes "--" on instead of eating it.
+foreach ($c in $Clients) {
+	if ($c -eq 'claude') {
+		Step 'Registering with Claude Code'
+		Native { claude mcp get $ServerName 2>$null } | Out-Null
+		if ($LASTEXITCODE -eq 0) {
+			Native { claude mcp remove $ServerName -s user 2>$null } | Out-Null
+			Ok "removed the previous '$ServerName' registration"
+		}
+		$addArgs = @('mcp', 'add', $ServerName, '-s', 'user',
+			'-e', "MOODLE_URL=$MoodleUrl", '-e', "MOODLE_TOKEN=$token", '--', $Bin)
+		Native { claude @addArgs } | Out-Null
+		# "claude mcp get" starts the server and reports whether it connects.
+		if ((Native { claude mcp get $ServerName 2>$null } | Out-String) -match 'Connected') {
+			Ok "'$ServerName' is registered and connects"
+		} else {
+			Die ("'$ServerName' is registered with Claude Code but does not connect. Run the binary by hand to see why:`n" +
+				"      `$env:MOODLE_URL = `"$MoodleUrl`"; `$env:MOODLE_TOKEN = `"<token>`"; & `"$Bin`"`n" +
+				"    and read the error it prints (see docs/STUDENT-SETUP.md, Troubleshooting).")
+		}
+	} else {
+		Step 'Registering with Codex'
+		# "codex mcp add" replaces an existing entry of the same name.
+		$addArgs = @('mcp', 'add', $ServerName,
+			'--env', "MOODLE_URL=$MoodleUrl", '--env', "MOODLE_TOKEN=$token", '--', $Bin)
+		Native { codex @addArgs } | Out-Null
+		# "codex mcp get" shows the configuration only; it doesn't start the server.
+		if ((Native { codex mcp get $ServerName 2>$null } | Out-String).Contains("command: $Bin")) {
+			Ok "'$ServerName' is registered (~\.codex\config.toml)"
+		} else {
+			Die "Codex did not save the registration; check: codex mcp get $ServerName"
+		}
+	}
 }
-# Claude Code starts MCP servers with a reduced PATH: register the absolute path.
-# The arguments go through an array so PowerShell passes "--" on instead of eating it.
-$addArgs = @('mcp', 'add', $ServerName, '-s', 'user',
-	'-e', "MOODLE_URL=$MoodleUrl", '-e', "MOODLE_TOKEN=$token", '--', $Bin)
-& claude @addArgs | Out-Null
 Remove-Variable token, addArgs
-if ((& claude mcp get $ServerName 2>$null | Out-String) -match 'Connected') {
-	Ok "'$ServerName' is registered and connects"
-} else {
-	Die ("'$ServerName' is registered but does not connect. Run the binary by hand to see why:`n" +
-		"      `$env:MOODLE_URL = `"$MoodleUrl`"; `$env:MOODLE_TOKEN = `"<token>`"; & `"$Bin`"`n" +
-		"    and read the error it prints (see docs/STUDENT-SETUP.md, Troubleshooting).")
-}
 
 # ---------------------------------------------------------------------------
-Step 'Claude Code skills'
+Step 'Skills'
 if ($SkillMode -eq 'ask') {
 	$SkillMode = 'yes'
 	if (Interactive) {
-		$answer = Read-Host '    Install the moodle skills into ~\.claude\skills (recommended)? [Y/n]'
+		$answer = Read-Host '    Install the moodle skills (recommended)? [Y/n]'
 		if ($answer -match '^[nN]') { $SkillMode = 'no' }
 	}
 }
 if ($SkillMode -eq 'yes') {
-	$dest = Join-Path $HOME '.claude\skills'
-	New-Item -ItemType Directory -Force -Path $dest | Out-Null
-	foreach ($dir in Get-ChildItem -Directory (Join-Path $Root 'skills')) {
-		$link = Join-Path $dest $dir.Name
-		$existing = Get-Item $link -Force -ErrorAction SilentlyContinue
-		if ($existing) {
-			if (-not ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-				Write-Host "    ! $link exists and is not a link; left as is"
-				continue
+	# Claude Code reads ~\.claude\skills, Codex ~\.agents\skills; both follow links.
+	foreach ($c in $Clients) {
+		$dest = if ($c -eq 'claude') { Join-Path (Join-Path $HOME '.claude') 'skills' } else { Join-Path (Join-Path $HOME '.agents') 'skills' }
+		New-Item -ItemType Directory -Force -Path $dest | Out-Null
+		foreach ($dir in Get-ChildItem -Directory (Join-Path $Root 'skills')) {
+			$link = Join-Path $dest $dir.Name
+			$existing = Get-Item $link -Force -ErrorAction SilentlyContinue
+			if ($existing) {
+				if (-not ($existing.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+					Write-Host "    ! $link exists and is not a link; left as is"
+					continue
+				}
+				[IO.Directory]::Delete($link) # removes the link only, not its target
 			}
-			[IO.Directory]::Delete($link) # removes the junction only, not its target
+			# Junctions need no administrator rights or developer mode, unlike symlinks.
+			$type = if ($OnWindows) { 'Junction' } else { 'SymbolicLink' }
+			New-Item -ItemType $type -Path $link -Target $dir.FullName | Out-Null
 		}
-		# Junctions need no administrator rights or developer mode, unlike symlinks.
-		New-Item -ItemType Junction -Path $link -Target $dir.FullName | Out-Null
+		Ok "skills linked into $dest (they update with git pull)"
 	}
-	Ok 'skills linked into ~\.claude\skills (they update with git pull)'
 } else {
 	Ok 'skipped'
 }
 
 Write-Host ""
-Write-Host 'Done. Restart Claude Code, then ask: "check my moodle connection" or "what is due this week?"'
+$names = ($Clients | ForEach-Object { if ($_ -eq 'claude') { 'Claude Code' } else { 'Codex' } }) -join ' and '
+Write-Host "Done. Restart $names, then ask: `"check my moodle connection`" or `"what is due this week?`""

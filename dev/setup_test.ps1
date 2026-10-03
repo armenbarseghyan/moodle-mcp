@@ -10,6 +10,9 @@
 $ErrorActionPreference = 'Stop'
 $Root = Split-Path -Parent $PSScriptRoot
 $Shell = (Get-Process -Id $PID).Path # run setup.ps1 with the same PowerShell
+# The runs use a temporary home; keep Go's caches so the build stays fast and offline.
+$env:GOMODCACHE = (& go env GOMODCACHE)
+$env:GOCACHE = (& go env GOCACHE)
 $Work = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid())
 New-Item -ItemType Directory -Path $Work | Out-Null
 $fake = $null
@@ -63,25 +66,72 @@ exit /b 0
 '@
 	}
 
-	function Run-Setup([string]$name, [hashtable]$envVars) {
+	# --- stub codex: "mcp add" stores the arguments, "mcp get" prints the command ---
+	$stubCodex = Join-Path $Work 'stub-codex'
+	New-Item -ItemType Directory -Path $stubCodex | Out-Null
+	if (-not $onWindows) {
+		Set-Content -Path (Join-Path $stubCodex 'codex') -Value @'
+#!/bin/sh
+printf '%s\n' "$*" >>"$STUB_DIR/codex.log"
+case "$1 $2" in
+"mcp add") for a in "$@"; do last="$a"; done; printf '%s' "$last" >"$STUB_DIR/codex-command" ;;
+"mcp get")
+	[ -f "$STUB_DIR/codex-command" ] || exit 1
+	printf '%s\n  transport: stdio\n  command: %s\n' "$3" "$(cat "$STUB_DIR/codex-command")" ;;
+esac
+'@
+		& chmod +x (Join-Path $stubCodex 'codex')
+	} else {
+		# cmd splits %1..%9 at "=" too, so the command is cut from %* after "-- ".
+		Set-Content -Encoding ascii -Path (Join-Path $stubCodex 'codex.cmd') -Value @'
+@echo off
+echo %*>>"%STUB_DIR%\codex.log"
+set "all=%*"
+if "%1 %2"=="mcp add" (
+  setlocal enabledelayedexpansion
+  set "cmd=!all:*-- =!"
+  set "cmd=!cmd:"=!"
+  >"%STUB_DIR%\codex-command" echo !cmd!
+  endlocal
+  exit /b 0
+)
+if not "%1 %2"=="mcp get" exit /b 0
+if not exist "%STUB_DIR%\codex-command" exit /b 1
+set /p cmd=<"%STUB_DIR%\codex-command"
+echo %3
+echo   transport: stdio
+echo   command: %cmd%
+exit /b 0
+'@
+	}
+
+	# Run-Setup NAME ENV-VARS [SETUP-ARGS] [STUB-DIRS]; default -Claude -NoSkills
+	# with only the claude stub on PATH.
+	function Run-Setup([string]$name, [hashtable]$envVars, [string[]]$setupArgs = @('-Claude', '-NoSkills'), [string[]]$stubs = @($stub)) {
+		# Windows PowerShell 5.1 turns the child's stderr into error records.
+		$ErrorActionPreference = 'Continue'
 		$dir = Join-Path $Work $name
 		New-Item -ItemType Directory -Path $dir | Out-Null
+		New-Item -ItemType Directory -Path (Join-Path $dir 'home') | Out-Null
 		$saved = @{}
-		$vars = @{ PATH = "$stub$([IO.Path]::PathSeparator)$env:PATH"; STUB_DIR = $dir; MOODLE_URL = $Url; MOODLE_TOKEN = $null; STUB_NEVER_CONNECTS = $null }
+		$sep = [IO.Path]::PathSeparator
+		$vars = @{ PATH = (($stubs + $env:PATH) -join $sep); STUB_DIR = $dir; MOODLE_URL = $Url; MOODLE_TOKEN = $null; STUB_NEVER_CONNECTS = $null
+			HOME = (Join-Path $dir 'home'); USERPROFILE = (Join-Path $dir 'home') }
 		foreach ($k in $envVars.Keys) { $vars[$k] = $envVars[$k] }
 		foreach ($k in $vars.Keys) {
 			$saved[$k] = [Environment]::GetEnvironmentVariable($k)
 			[Environment]::SetEnvironmentVariable($k, $vars[$k])
 		}
 		try {
-			$out = & $Shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'setup.ps1') -NoSkills 2>&1 | Out-String
+			$out = & $Shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'setup.ps1') @setupArgs 2>&1 | Out-String
 			$code = $LASTEXITCODE
 		} finally {
 			foreach ($k in $saved.Keys) { [Environment]::SetEnvironmentVariable($k, $saved[$k]) }
 		}
 		Set-Content -Path (Join-Path $dir 'out') -Value $out
 		$calls = if (Test-Path (Join-Path $dir 'calls.log')) { Get-Content -Raw (Join-Path $dir 'calls.log') } else { '' }
-		return @{ Code = $code; Out = $out; Calls = $calls }
+		$codexCalls = if (Test-Path (Join-Path $dir 'codex.log')) { Get-Content -Raw (Join-Path $dir 'codex.log') } else { '' }
+		return @{ Code = $code; Out = $out; Calls = $calls; Codex = $codexCalls; Home = (Join-Path $dir 'home') }
 	}
 
 	Write-Host "setup.ps1 end-to-end with $Shell (fake Moodle at $Url)"
@@ -107,6 +157,20 @@ exit /b 0
 	# 4. Registered but not connecting: points at running the binary by hand.
 	$r = Run-Setup 'no-connect' @{ MOODLE_TOKEN = $Token; STUB_NEVER_CONNECTS = '1' }
 	Check 'explains how to debug a server that does not connect' (($r.Code -ne 0) -and ($r.Out -match 'Run the binary by hand'))
+
+	# 5. Codex only: --env and the absolute path, Claude Code untouched.
+	$r = Run-Setup 'codex-only' @{ MOODLE_TOKEN = $Token } @('-Codex', '-NoSkills') @($stub, $stubCodex)
+	Check '-Codex succeeds' ($r.Code -eq 0)
+	Check '-Codex registers the absolute binary path with both variables' `
+		($r.Codex.Contains("mcp add moodle --env MOODLE_URL=$Url --env MOODLE_TOKEN=$Token -- $bin"))
+	Check '-Codex leaves Claude Code alone' (-not $r.Calls)
+
+	# 6. Default: every installed client, skills linked for each.
+	$r = Run-Setup 'both' @{ MOODLE_TOKEN = $Token } @('-Skills') @($stub, $stubCodex)
+	Check 'default registers with every installed client' (($r.Code -eq 0) -and $r.Calls.Contains('mcp add moodle') -and $r.Codex.Contains('mcp add moodle'))
+	Check 'skills linked for Claude Code and Codex' `
+		((Test-Path (Join-Path $r.Home '.claude/skills/moodle-setup/SKILL.md')) -and (Test-Path (Join-Path $r.Home '.agents/skills/moodle-briefing/SKILL.md')))
+	Check 'tells which clients to restart' ($r.Out -match 'Restart Claude Code and Codex')
 
 	Write-Host ""
 	Write-Host "$script:pass passed, $script:fail failed"

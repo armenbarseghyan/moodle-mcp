@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # setup.sh — build moodle-mcp, get your Moodle token and register the server
-# with Claude Code. Safe to re-run: it replaces an existing registration.
+# with Claude Code and/or Codex. Safe to re-run: it replaces an existing
+# registration.
 #
 #   ./setup.sh                 interactive (asks for your FH login once)
 #   MOODLE_TOKEN=… ./setup.sh  use a token you already have
-#   ./setup.sh --no-skills     don't install the Claude Code skills
+#   ./setup.sh --codex         only Codex (--claude: only Claude Code;
+#                              default: every one that is installed)
+#   ./setup.sh --no-skills     don't install the skills
 #
 # Your password is sent only to $MOODLE_URL/login/token.php (the endpoint the
 # official Moodle app uses), through stdin so it never shows up in the process
@@ -20,15 +23,17 @@ SERVER_NAME="${MOODLE_MCP_NAME:-moodle}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BIN="$ROOT/bin/moodle-mcp"
 SKILLS="ask"
+CLIENTS="" # "claude", "codex" or both; empty: every installed one
 
 usage() {
-	sed -n '2,13p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+	sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 	--skills) SKILLS="yes" ;;
 	--no-skills) SKILLS="no" ;;
+	--claude | --codex) CLIENTS="$CLIENTS ${1#--}" ;;
 	--url)
 		[ $# -ge 2 ] || { usage >&2; exit 2; }
 		MOODLE_URL="${2%/}"
@@ -65,8 +70,17 @@ json_field() {
 # ---------------------------------------------------------------------------
 step "Checking prerequisites"
 command -v curl >/dev/null || die "curl is required."
-command -v claude >/dev/null || die "Claude Code (the 'claude' CLI) is not on your PATH. Install it from https://claude.com/claude-code and run this script again."
-ok "curl and claude found"
+if [ -z "$CLIENTS" ]; then
+	for c in claude codex; do
+		if command -v "$c" >/dev/null; then CLIENTS="$CLIENTS $c"; fi
+	done
+	[ -n "$CLIENTS" ] || die "neither Claude Code ('claude') nor Codex ('codex') is on your PATH. Install one (https://claude.com/claude-code or https://developers.openai.com/codex) and run this script again."
+else
+	for c in $CLIENTS; do
+		command -v "$c" >/dev/null || die "'$c' is not on your PATH."
+	done
+fi
+ok "curl found; setting up for:$CLIENTS"
 
 # ---------------------------------------------------------------------------
 step "Building the server"
@@ -157,45 +171,78 @@ fullname="$(printf '%s' "$site" | json_field fullname)"
 username_ws="$(printf '%s' "$site" | json_field username)"
 ok "signed in as ${fullname:-?} (${username_ws:-?})"
 
-# ---------------------------------------------------------------------------
-step "Registering with Claude Code"
-if claude mcp get "$SERVER_NAME" >/dev/null 2>&1; then
-	claude mcp remove "$SERVER_NAME" -s user >/dev/null 2>&1 || true
-	ok "removed the previous '$SERVER_NAME' registration"
-fi
-# Claude Code starts MCP servers with a reduced PATH: register the absolute path.
-claude mcp add "$SERVER_NAME" -s user \
-	-e "MOODLE_URL=$MOODLE_URL" \
-	-e "MOODLE_TOKEN=$token" \
-	-- "$BIN" >/dev/null
-unset token
-if claude mcp get "$SERVER_NAME" 2>/dev/null | grep -q "Connected"; then
-	ok "'$SERVER_NAME' is registered and connects"
-else
-	die "'$SERVER_NAME' is registered but does not connect. Run the binary by hand to see why:
+# Both clients start MCP servers with a reduced PATH: register the absolute path.
+not_connecting() {
+	die "'$SERVER_NAME' is registered with $1 but does not connect. Run the binary by hand to see why:
       MOODLE_URL=$MOODLE_URL MOODLE_TOKEN=<token> $BIN
     and read the error on stderr (see docs/STUDENT-SETUP.md, Troubleshooting)."
-fi
+}
+
+register_claude() {
+	step "Registering with Claude Code"
+	if claude mcp get "$SERVER_NAME" >/dev/null 2>&1; then
+		claude mcp remove "$SERVER_NAME" -s user >/dev/null 2>&1 || true
+		ok "removed the previous '$SERVER_NAME' registration"
+	fi
+	claude mcp add "$SERVER_NAME" -s user \
+		-e "MOODLE_URL=$MOODLE_URL" \
+		-e "MOODLE_TOKEN=$token" \
+		-- "$BIN" >/dev/null
+	# "claude mcp get" starts the server and reports whether it connects.
+	if claude mcp get "$SERVER_NAME" 2>/dev/null | grep -q "Connected"; then
+		ok "'$SERVER_NAME' is registered and connects"
+	else
+		not_connecting "Claude Code"
+	fi
+}
+
+register_codex() {
+	step "Registering with Codex"
+	# "codex mcp add" replaces an existing entry of the same name.
+	codex mcp add "$SERVER_NAME" \
+		--env "MOODLE_URL=$MOODLE_URL" \
+		--env "MOODLE_TOKEN=$token" \
+		-- "$BIN" >/dev/null
+	# "codex mcp get" shows the configuration only; it doesn't start the server.
+	if codex mcp get "$SERVER_NAME" 2>/dev/null | grep -qF "command: $BIN"; then
+		ok "'$SERVER_NAME' is registered (~/.codex/config.toml)"
+	else
+		die "Codex did not save the registration; check: codex mcp get $SERVER_NAME"
+	fi
+}
 
 # ---------------------------------------------------------------------------
-step "Claude Code skills"
+for c in $CLIENTS; do "register_$c"; done
+unset token
+
+# ---------------------------------------------------------------------------
+step "Skills"
+# Claude Code reads ~/.claude/skills, Codex ~/.agents/skills; both follow links.
+skill_dirs=""
+for c in $CLIENTS; do
+	case "$c" in
+	claude) skill_dirs="$skill_dirs $HOME/.claude/skills" ;;
+	codex) skill_dirs="$skill_dirs $HOME/.agents/skills" ;;
+	esac
+done
 if [ "$SKILLS" = "ask" ]; then
 	if interactive; then
-		read -r -p "    Install the moodle skills into ~/.claude/skills (recommended)? [Y/n] " answer
+		read -r -p "    Install the moodle skills (recommended)? [Y/n] " answer
 		case "$answer" in [nN]*) SKILLS="no" ;; *) SKILLS="yes" ;; esac
 	else
 		SKILLS="yes"
 	fi
 fi
 if [ "$SKILLS" = "yes" ]; then
-	mkdir -p "$HOME/.claude/skills"
-	for dir in "$ROOT"/skills/*/; do
-		name="$(basename "$dir")"
-		ln -sfn "${dir%/}" "$HOME/.claude/skills/$name"
+	for target in $skill_dirs; do
+		mkdir -p "$target"
+		for dir in "$ROOT"/skills/*/; do
+			ln -sfn "${dir%/}" "$target/$(basename "$dir")"
+		done
+		ok "skills linked into ~/${target#"$HOME"/} (they update with git pull)"
 	done
-	ok "skills linked into ~/.claude/skills (they update with git pull)"
 else
 	ok "skipped"
 fi
 
-printf '\nDone. Restart Claude Code, then ask: "check my moodle connection" or "what is due this week?"\n'
+printf '\nDone. Restart%s, then ask: "check my moodle connection" or "what is due this week?"\n' "$(printf '%s' "$CLIENTS" | sed 's/ claude/ Claude Code/; s/ codex/ Codex/; s/Code Codex/Code and Codex/')"

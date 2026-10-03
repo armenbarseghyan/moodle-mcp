@@ -17,7 +17,7 @@ powershell -ExecutionPolicy Bypass -File .\setup.ps1     # Windows
 ```
 
 The setup builds the server (or downloads a verified release binary when Go is missing), asks
-for your FH login once, gets and checks the token, registers the server with Claude Code and
+for your FH login once, gets and checks the token, registers the server with Claude Code and/or Codex (whichever is installed) and
 links the skills. Step-by-step guide, the token pitfalls and troubleshooting:
 **[docs/STUDENT-SETUP.md](docs/STUDENT-SETUP.md)**. Architecture and design decisions:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -49,9 +49,10 @@ Token: `./setup.sh` gets it from `login/token.php` (service `moodle_mobile_app`)
 *Security keys* page stays empty for students, which is expected. See the
 [setup guide](docs/STUDENT-SETUP.md#about-the-token--four-pitfalls).
 
-## Connect to Claude Code
+## Connect to Claude Code or Codex
 
-`setup.sh` does this; by hand (the path must be absolute):
+`setup.sh` does this; by hand (the path must be absolute). Codex: the same with
+`codex mcp add moodle --env … --env … -- <path>`.
 
 ```bash
 claude mcp add moodle --scope user \
@@ -108,7 +109,7 @@ skipped. PDFs are read in pure Go (a vendored, patched `ledongthuc/pdf`, see
 
 ## Skills
 
-Seven Claude Code skills — briefing, finding material and answering from it, working through an
+Seven skills (Claude Code and Codex) — briefing, finding material and answering from it, working through an
 assignment, grades, a visual dashboard, course profiles from the syllabi, and diagnostics — live
 in [skills/](skills/README.md):
 

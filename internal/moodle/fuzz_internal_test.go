@@ -24,6 +24,9 @@ func FuzzDecode(f *testing.F) {
 		`{"error":"e","errorcode":"invalidtoken"}`, `[]`, `{}`, `null`, `<html>` + fuzzToken, ``, `{"userid":"x"}`,
 		// %q escapes that end in "0" next to the rest of the token (found by the fuzzer)
 		"\xb0" + fuzzToken[1:] + "0", "\x00" + fuzzToken[1:], "\x10" + fuzzToken[1:],
+		// the token in fields other than message (found by the fuzzer)
+		`{"exception":"x","errorcode":"` + fuzzToken + `"}`, `{"exception":"` + fuzzToken + `","errorcode":"e"}`,
+		`{"error":"e","errorcode":"` + fuzzToken + `"}`,
 	} {
 		f.Add([]byte(s))
 	}

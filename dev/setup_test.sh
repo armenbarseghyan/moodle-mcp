@@ -65,14 +65,34 @@ esac
 STUB
 chmod +x "$WORK/stub/claude"
 
-# run_setup NAME [ENV...] -- [ARGS...]: runs setup.sh in a fresh HOME.
+# stub codex: "mcp add" stores the command, "mcp get" prints it like Codex does.
+mkdir -p "$WORK/stub-codex"
+cat >"$WORK/stub-codex/codex" <<'STUB'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$STUB_DIR/codex.log"
+case "$1 $2" in
+"mcp add") printf '%s' "${!#}" >"$STUB_DIR/codex-command" ;;
+"mcp get")
+	[ -f "$STUB_DIR/codex-command" ] || exit 1
+	printf '%s\n  enabled: true\n  transport: stdio\n  command: %s\n' "$3" "$(cat "$STUB_DIR/codex-command")"
+	;;
+esac
+STUB
+chmod +x "$WORK/stub-codex/codex"
+
+# run_setup NAME [VAR=VALUE...] [-- SETUP-ARGS...]: runs setup.sh in a fresh
+# HOME with the claude stub on PATH (STUBS=... to choose other stub dirs).
+# Default arguments: --claude --no-skills.
 run_setup() {
 	local name="$1"
 	shift
-	local dir="$WORK/$name"
+	local dir="$WORK/$name" vars=()
+	while [ $# -gt 0 ] && [ "$1" != "--" ]; do vars+=("$1"); shift; done
+	[ $# -gt 0 ] && shift
+	[ $# -gt 0 ] || set -- --claude --no-skills
 	mkdir -p "$dir/home"
-	env HOME="$dir/home" PATH="$WORK/stub:$PATH" STUB_DIR="$dir" MOODLE_URL="$URL" "$@" \
-		"$ROOT/setup.sh" --no-skills >"$dir/out" 2>&1
+	env HOME="$dir/home" PATH="${STUBS:-$WORK/stub}:$PATH" STUB_DIR="$dir" MOODLE_URL="$URL" "${vars[@]}" \
+		"$ROOT/setup.sh" "$@" >"$dir/out" 2>&1
 }
 
 # Interactive runs need a terminal: drive setup.sh through a pseudo-terminal
@@ -81,7 +101,7 @@ run_setup() {
 run_interactive() {
 	local name="$1" username="$2" password="$3"
 	shift 3
-	[ $# -gt 0 ] || set -- "$ROOT/setup.sh" --no-skills
+	[ $# -gt 0 ] || set -- "$ROOT/setup.sh" --claude --no-skills
 	local dir="$WORK/$name"
 	mkdir -p "$dir/home"
 	env -u MOODLE_TOKEN HOME="$dir/home" PATH="$WORK/stub:$PATH" STUB_DIR="$dir" MOODLE_URL="$URL" \
@@ -139,18 +159,46 @@ run_setup no-connect MOODLE_TOKEN="$TOKEN" STUB_NEVER_CONNECTS=1 || rc=$?
 [ "$rc" -ne 0 ] && grep -q "Run the binary by hand" "$WORK/no-connect/out"
 check "explains how to debug a server that does not connect" $?
 
-# 7. setup.ps1's interactive login, when PowerShell 7 is available (PWSH=path or
+# 7. Codex: registered with --env and the absolute path, nothing sent to Claude Code.
+rc=0
+STUBS="$WORK/stub:$WORK/stub-codex" run_setup codex-only MOODLE_TOKEN="$TOKEN" -- --codex --no-skills || rc=$?
+check "--codex succeeds" "$rc"
+grep -q "^mcp add moodle --env MOODLE_URL=$URL --env MOODLE_TOKEN=$TOKEN -- $ROOT/bin/moodle-mcp\$" "$WORK/codex-only/codex.log"
+check "--codex registers the absolute binary path with both variables" $?
+if [ -f "$WORK/codex-only/calls.log" ]; then rc=1; else rc=0; fi
+check "--codex leaves Claude Code alone" "$rc"
+
+# 8. Default: every installed client, skills linked for each.
+rc=0
+STUBS="$WORK/stub:$WORK/stub-codex" run_setup both MOODLE_TOKEN="$TOKEN" -- --skills || rc=$?
+check "default registers with every installed client" "$([ "$rc" -eq 0 ] &&
+	grep -q "^mcp add moodle -s user" "$WORK/both/calls.log" &&
+	grep -q "^mcp add moodle --env" "$WORK/both/codex.log"; echo $?)"
+rc=1
+if [ -L "$WORK/both/home/.claude/skills/moodle-setup" ] && [ -L "$WORK/both/home/.agents/skills/moodle-setup" ] &&
+	[ -f "$WORK/both/home/.agents/skills/moodle-briefing/SKILL.md" ]; then rc=0; fi
+check "skills linked for Claude Code (~/.claude/skills) and Codex (~/.agents/skills)" "$rc"
+grep -q "Restart Claude Code and Codex" "$WORK/both/out"
+check "tells which clients to restart" $?
+
+# 9. No client installed.
+rc=0
+STUBS="$WORK/none" run_setup no-client MOODLE_TOKEN="$TOKEN" PATH="$WORK/none:/usr/bin:/bin" -- --no-skills || rc=$?
+[ "$rc" -ne 0 ] && grep -q "neither Claude Code" "$WORK/no-client/out"
+check "explains that Claude Code or Codex is needed" $?
+
+# 10. setup.ps1's interactive login, when PowerShell 7 is available (PWSH=path or
 # pwsh on PATH). Its other paths are covered by dev/setup_test.ps1.
 PWSH="${PWSH:-$(command -v pwsh || true)}"
 if [ -n "$PWSH" ]; then
 	rc=0
-	run_interactive ps-login-ok "$USERNAME" "$PASSWORD" "$PWSH" -NoProfile -File "$ROOT/setup.ps1" -NoSkills || rc=$?
+	run_interactive ps-login-ok "$USERNAME" "$PASSWORD" "$PWSH" -NoProfile -File "$ROOT/setup.ps1" -Claude -NoSkills || rc=$?
 	[ "$rc" -eq 0 ] && grep -q "MOODLE_TOKEN=$TOKEN " "$WORK/ps-login-ok/calls.log"
 	check "setup.ps1: interactive login registers the 32-character token" $?
 	if grep -q -- "$PASSWORD" "$WORK/ps-login-ok/out" "$WORK/ps-login-ok/calls.log"; then rc=1; else rc=0; fi
 	check "setup.ps1: never echoes or passes on the password" "$rc"
 	rc=0
-	run_interactive ps-login-bad "$USERNAME" wrong "$PWSH" -NoProfile -File "$ROOT/setup.ps1" -NoSkills || rc=$?
+	run_interactive ps-login-bad "$USERNAME" wrong "$PWSH" -NoProfile -File "$ROOT/setup.ps1" -Claude -NoSkills || rc=$?
 	[ "$rc" -ne 0 ] && grep -q "rejected the username or password (invalidlogin)" "$WORK/ps-login-bad/out"
 	check "setup.ps1: wrong password fails with invalidlogin" $?
 else
