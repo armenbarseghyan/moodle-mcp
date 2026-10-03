@@ -5,6 +5,9 @@
 ### Fixed
 - `moodle_download` with the default destination saved the file as `~/Downloads/moodle`
   instead of into that folder when the folder did not exist yet.
+- A destination starting with `~` fails with a clear error when the home directory is unknown,
+  instead of creating a folder named `~` in the working directory. On Windows `~\…` is
+  expanded too.
 
 ## [0.2.0] — 2026-10-03
 

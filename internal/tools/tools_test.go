@@ -279,6 +279,33 @@ func TestDownload(t *testing.T) {
 	}
 }
 
+// Without MOODLE_DOWNLOAD_DIR the file lands in ~/Downloads/moodle/, a folder
+// created on first use.
+func TestDownload_DefaultDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	srv := fakeMoodle(t, moodletest.Files(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("%PDF-1.7"))
+	})))
+	client, err := moodle.New(moodle.Config{BaseURL: srv.URL, Token: moodletest.Token, Backoff: func(int) time.Duration { return 0 }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	clock := func() time.Time { return now }
+	svc := study.New(cache.NewSource(client, clock), study.Options{Now: clock})
+	e := connect(t, tools.Deps{Service: svc, Now: clock, Version: "test"}, srv, "")
+
+	out, isErr := e.call(t, "moodle_download", map[string]any{"fileurl": srv.URL + "/pluginfile.php/1/a.pdf"})
+	want := filepath.Join(home, "Downloads", "moodle", "a.pdf")
+	if isErr || !strings.Contains(out, want) {
+		t.Fatalf("isErr=%v, want %s\n%s", isErr, want, out)
+	}
+	if b, err := os.ReadFile(want); err != nil || string(b) != "%PDF-1.7" {
+		t.Fatalf("file: %q %v", b, err)
+	}
+}
+
 func TestListTools(t *testing.T) {
 	e := setup(t, moodletest.Token)
 	res, err := e.session.ListTools(context.Background(), nil)

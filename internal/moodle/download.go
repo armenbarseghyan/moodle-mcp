@@ -326,7 +326,10 @@ func SanitizeFilename(name string) string {
 func resolveTarget(dest, name string) (string, error) {
 	// Check the trailing separator before expandHome: filepath.Join drops it.
 	isDir := strings.HasSuffix(dest, string(os.PathSeparator)) || strings.HasSuffix(dest, "/")
-	dest = expandHome(dest)
+	dest, err := expandHome(dest)
+	if err != nil {
+		return "", err
+	}
 	if fi, err := os.Stat(dest); err == nil && fi.IsDir() {
 		isDir = true
 	}
@@ -346,13 +349,17 @@ func resolveTarget(dest, name string) (string, error) {
 	return abs, nil
 }
 
-func expandHome(p string) string {
-	if p == "~" || strings.HasPrefix(p, "~/") {
-		if home, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(home, strings.TrimPrefix(p, "~"))
-		}
+// expandHome replaces a leading "~" with the home directory. It fails rather
+// than leave a literal "~" that would become a folder in the working directory.
+func expandHome(p string) (string, error) {
+	if p != "~" && !strings.HasPrefix(p, "~/") && !strings.HasPrefix(p, "~"+string(os.PathSeparator)) {
+		return p, nil
 	}
-	return p
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("moodle: cannot expand ~: %w", err)
+	}
+	return filepath.Join(home, p[1:]), nil
 }
 
 // uniqueName returns "name (1).ext", "name (2).ext", ... for the first free slot.

@@ -204,12 +204,35 @@ func TestDownload_HomeDirWithTrailingSlashIsCreated(t *testing.T) {
 	srv := moodletest.New(t, moodletest.Files(fileServer(t, http.Header{}, pdfBody, 0)))
 	c := newClient(t, srv)
 
-	res, err := c.Download(context.Background(), srv.URL+"/pluginfile.php/1/R_1.pdf", "~/Downloads/moodle/")
-	if err != nil {
-		t.Fatal(err)
+	sep := string(os.PathSeparator)
+	want := filepath.Join(home, "Downloads", "moodle", "a.pdf")
+	// The second shape is "~\Downloads\moodle\" on Windows; the identical
+	// file is then reused at the same path.
+	for _, dest := range []string{"~/Downloads/moodle/", "~" + sep + "Downloads" + sep + "moodle" + sep} {
+		res, err := c.Download(context.Background(), srv.URL+"/pluginfile.php/1/a.pdf", dest)
+		if err != nil {
+			t.Fatalf("%q: %v", dest, err)
+		}
+		if res.Path != want {
+			t.Errorf("%q: path = %s, want %s", dest, res.Path, want)
+		}
 	}
-	if want := filepath.Join(home, "Downloads", "moodle", "R_1.pdf"); res.Path != want {
-		t.Errorf("path = %s, want %s", res.Path, want)
+}
+
+// With no known home directory "~" must fail, not become a folder named "~"
+// in the working directory.
+func TestDownload_TildeWithoutHomeFails(t *testing.T) {
+	t.Setenv("HOME", "")
+	t.Setenv("USERPROFILE", "")
+	srv := moodletest.New(t, moodletest.Files(fileServer(t, http.Header{}, pdfBody, 0)))
+	c := newClient(t, srv)
+	t.Chdir(t.TempDir())
+
+	if _, err := c.Download(context.Background(), srv.URL+"/pluginfile.php/1/a.pdf", "~/Downloads/moodle/"); err == nil {
+		t.Fatal("want an error when the home directory is unknown")
+	}
+	if _, err := os.Stat("~"); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf(`a "~" entry was created in the working directory: %v`, err)
 	}
 }
 
