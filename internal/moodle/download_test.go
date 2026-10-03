@@ -195,6 +195,24 @@ func TestDownload(t *testing.T) {
 	}
 }
 
+// The default destination is "~/Downloads/moodle/": a missing directory under
+// the home dir must be created, not taken as the target file name.
+func TestDownload_HomeDirWithTrailingSlashIsCreated(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("USERPROFILE", home)
+	srv := moodletest.New(t, moodletest.Files(fileServer(t, http.Header{}, pdfBody, 0)))
+	c := newClient(t, srv)
+
+	res, err := c.Download(context.Background(), srv.URL+"/pluginfile.php/1/R_1.pdf", "~/Downloads/moodle/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(home, "Downloads", "moodle", "R_1.pdf"); res.Path != want {
+		t.Errorf("path = %s, want %s", res.Path, want)
+	}
+}
+
 func TestDownload_ExistingFile(t *testing.T) {
 	t.Parallel()
 	lastMod := time.Date(2026, 9, 1, 10, 0, 0, 0, time.UTC)

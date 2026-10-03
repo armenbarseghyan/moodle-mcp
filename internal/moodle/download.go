@@ -324,8 +324,9 @@ func SanitizeFilename(name string) string {
 }
 
 func resolveTarget(dest, name string) (string, error) {
-	dest = expandHome(dest)
+	// Check the trailing separator before expandHome: filepath.Join drops it.
 	isDir := strings.HasSuffix(dest, string(os.PathSeparator)) || strings.HasSuffix(dest, "/")
+	dest = expandHome(dest)
 	if fi, err := os.Stat(dest); err == nil && fi.IsDir() {
 		isDir = true
 	}

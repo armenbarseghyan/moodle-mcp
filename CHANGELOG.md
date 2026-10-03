@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.2.1] — 2026-10-03
+
+### Fixed
+- `moodle_download` with the default destination saved the file as `~/Downloads/moodle`
+  instead of into that folder when the folder did not exist yet.
+
 ## [0.2.0] — 2026-10-03
 
 ### Added
@@ -45,5 +51,6 @@ First release.
   checksum-verified release binary.
 - CI on Linux, macOS and Windows; release binaries for six platforms.
 
+[0.2.1]: https://github.com/armenbarseghyan/moodle-mcp/releases/tag/v0.2.1
 [0.2.0]: https://github.com/armenbarseghyan/moodle-mcp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/armenbarseghyan/moodle-mcp/releases/tag/v0.1.0
