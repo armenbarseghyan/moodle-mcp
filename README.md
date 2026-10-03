@@ -8,12 +8,17 @@
 grades and announcements in plain language (any language), and get answers with links that
 open in your browser.
 
-> *"What's due this week?"* · *"How do I connect to the lab VM from home?"* ·
+> *"What's due this week?"* · *"Anything new since Monday?"* · *"How do I connect to the lab VM from home?"* ·
 > *"What do I need to do for Homework R2?"* · *"How are my grades?"* ·
 > *"Make a dashboard of my next two weeks"* · *"Was gibt es Neues in PDP?"*
 
 It is **read-only**: it can read your courses, but it cannot submit, post or change
 anything in Moodle. It runs on your own computer, with your own account.
+
+<p align="center">
+  <img src="docs/images/dashboard.png" alt="Study dashboard: calendar with deadlines, urgent items, plan, announcements and grades" width="820">
+  <br><sub><i>"Make a dashboard of my next two weeks", with example data</i></sub>
+</p>
 
 ---
 
@@ -98,8 +103,8 @@ through the checks.
 
 ## What's inside
 
-- **8 tools:** deadlines (assignments and quizzes, with submission status), announcements,
-  courses, course contents, search (also *inside* PDFs, Word, PowerPoint, notebooks, with
+- **9 tools:** deadlines (assignments and quizzes, with submission status), what's new (new
+  or updated files, announcements and grades in one call), announcements, courses, course contents, search (also *inside* PDFs, Word, PowerPoint, notebooks, with
   page numbers), grades with feedback, file download, and a self-check.
 - **7 [skills](skills/README.md)** on top of them: briefing, finding and quoting material,
   working through an assignment, grades, a visual dashboard, course profiles from the
@@ -165,6 +170,7 @@ claude mcp add moodle-http --transport http http://127.0.0.1:8765/mcp --header "
 | Tool | Parameters | What it does |
 |---|---|---|
 | `moodle_deadlines` | `days=14`, `include_overdue=true`, `refresh` | Deadlines until the end of day N (Vienna): calendar + assignment due dates, deduplicated, submission status for every assignment and attempt status for every quiz, unsubmitted assignments overdue by up to 7 days |
+| `moodle_whats_new` | `days=7`, `refresh` | Everything that changed lately in one call: new or updated files in all active courses (by course, with section and links), announcements, new grades |
 | `moodle_announcements` | `days=7`, `refresh` | Recent posts in the announcement forums of all courses |
 | `moodle_courses` | `include_past`, `refresh` | Active courses: id, name, dates, progress |
 | `moodle_course_contents` | `course`, `refresh` | A course's material by section (incl. Moodle 4.5 subsections) with file links. `course` is an id or part of the name; ambiguous queries return candidates |

@@ -32,14 +32,17 @@ func P() *message.Printer { return printer.Load() }
 // Counted phrases. Each key holds a single %d; English needs a singular form,
 // other languages register their own plural cases for the same keys.
 var countedEnglish = map[string]string{
-	"%d days":           "%d day",
-	"%d days ago":       "%d day ago",
-	"in %d days":        "in %d day",
-	"%d active courses": "%d active course",
-	"%d matches":        "%d match",
-	"%d assignments":    "%d assignment",
-	"%d more lines":     "%d more line",
-	"%d announcements":  "%d announcement",
+	"%d days":                 "%d day",
+	"%d days ago":             "%d day ago",
+	"in %d days":              "in %d day",
+	"%d active courses":       "%d active course",
+	"%d matches":              "%d match",
+	"%d assignments":          "%d assignment",
+	"%d more lines":           "%d more line",
+	"%d announcements":        "%d announcement",
+	"%d items not graded yet": "%d item not graded yet",
+	"%d new or updated files": "%d new or updated file",
+	"%d new grades":           "%d new grade",
 }
 
 func registerEnglishPlurals() {

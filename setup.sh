@@ -52,10 +52,22 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-step() { printf '\n==> %s\n' "$*"; }
-ok() { printf '    ✓ %s\n' "$*"; }
+# Colours only on a terminal, and never with NO_COLOR set (https://no-color.org).
+if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
+	B=$'\033[1m' DIM=$'\033[2m' GREEN=$'\033[32m' RED=$'\033[31m' CYAN=$'\033[36m' R=$'\033[0m'
+else
+	B="" DIM="" GREEN="" RED="" CYAN="" R=""
+fi
+STEP=0
+TOTAL=6 # updated once the clients are known
+step() {
+	STEP=$((STEP + 1))
+	printf '\n%s[%d/%d]%s %s%s%s\n' "$CYAN" "$STEP" "$TOTAL" "$R" "$B" "$*" "$R"
+}
+ok() { printf '    %s✓%s %s\n' "$GREEN" "$R" "$*"; }
+note() { printf '    %s%s%s\n' "$DIM" "$*" "$R"; }
 die() {
-	printf '\n    ✗ %s\n' "$*" >&2
+	printf '\n    %s✗ %s%s\n' "$RED" "$*" "$R" >&2
 	exit 1
 }
 interactive() { [ -t 0 ]; }
@@ -68,6 +80,8 @@ json_field() {
 }
 
 # ---------------------------------------------------------------------------
+printf '%smoodle-mcp setup%s — connects your FH JOANNEUM Moodle to your AI assistant.\n' "$B" "$R"
+note "Read-only: it can read your courses, never change anything in Moodle."
 step "Checking prerequisites"
 command -v curl >/dev/null || die "curl is required."
 if [ -z "$CLIENTS" ]; then
@@ -80,7 +94,11 @@ else
 		command -v "$c" >/dev/null || die "'$c' is not on your PATH."
 	done
 fi
-ok "curl found; setting up for:$CLIENTS"
+# prerequisites, build, token, check, one registration per client, skills
+TOTAL=5
+for c in $CLIENTS; do TOTAL=$((TOTAL + 1)); done
+CLIENT_NAMES="$(printf '%s' "$CLIENTS" | sed 's/ claude/ Claude Code/; s/ codex/ Codex/; s/^ //; s/Code Codex/Code and Codex/')"
+ok "setting up for $CLIENT_NAMES"
 
 # ---------------------------------------------------------------------------
 step "Building the server"
@@ -128,8 +146,8 @@ if [ -n "$token" ]; then
 	ok "using MOODLE_TOKEN from the environment"
 else
 	interactive || die "no terminal to ask for your login; run with MOODLE_TOKEN=<token> instead."
-	printf '    Your FH login is sent once to %s/login/token.php and not stored.\n' "$MOODLE_URL"
-	printf '    Type it (don'"'"'t paste several lines at once).\n'
+	note "Your FH login goes once to $MOODLE_URL/login/token.php and is not saved."
+	note "Type it (don't paste several lines at once). The password stays hidden as you type."
 	read -r -p "    FH username: " username
 	read -r -s -p "    FH password (hidden): " password
 	printf '\n'
@@ -245,4 +263,14 @@ else
 	ok "skipped"
 fi
 
-printf '\nDone. Restart%s, then ask: "check my moodle connection" or "what is due this week?"\n' "$(printf '%s' "$CLIENTS" | sed 's/ claude/ Claude Code/; s/ codex/ Codex/; s/Code Codex/Code and Codex/')"
+cat <<EOF
+
+${GREEN}${B}✓ All set.${R}
+
+  ${B}1.${R} Restart ${CLIENT_NAMES}.
+  ${B}2.${R} Ask: ${CYAN}"check my moodle connection"${R}
+  ${B}3.${R} Then try: ${CYAN}"what's due this week?"${R} · ${CYAN}"anything new?"${R} · ${CYAN}"make a dashboard of my next two weeks"${R}
+
+  Once per semester: ${CYAN}"set up my course profiles from the syllabi"${R}
+  ${DIM}Help and troubleshooting: docs/STUDENT-SETUP.md${R}
+EOF

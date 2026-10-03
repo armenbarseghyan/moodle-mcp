@@ -42,7 +42,7 @@ Template (write the headings in the user's language):
 
 | Due | Time left | Status |
 |---|---|---|
-| **<date time>** | <in N days> | ❌ not submitted / 📝 draft / ✅ submitted |
+| **<date time>** | <in N days> | ⬜ not submitted yet / 📝 draft — not submitted / ✅ submitted / ❌ overdue |
 
 **Counts for:** <component and weight from the profile, e.g. "Homework Assignments, 30 % of the
 grade, not a must-pass" — omit without a profile>

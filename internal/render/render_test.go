@@ -116,3 +116,65 @@ func TestLinkEscaping(t *testing.T) {
 		}
 	}
 }
+
+func TestDeadlineMarks(t *testing.T) {
+	t.Parallel()
+	item := func(title string, due time.Duration, s study.Submission) study.Deadline {
+		return study.Deadline{Key: study.DeadlineKey{Module: "assign"}, Course: study.CourseRef{Label: "C"},
+			Title: title, URL: "https://m.test/a", Due: now.Add(due), Status: s}
+	}
+	out := render.Deadlines(study.DeadlinesResult{
+		Days: 14, Until: now.Add(14 * 24 * time.Hour),
+		Overdue: []study.Deadline{item("Late", -24*time.Hour, study.SubmissionNotSubmitted)},
+		Upcoming: []study.Deadline{
+			item("Soon", 10*time.Hour, study.SubmissionNotSubmitted),
+			item("SoonDraft", 20*time.Hour, study.SubmissionDraft),
+			item("SoonDone", 10*time.Hour, study.SubmissionSubmitted),
+			item("Later", 5*24*time.Hour, study.SubmissionNotSubmitted),
+		},
+	}, now)
+	for _, tt := range []struct {
+		title, want string
+		urgent      bool
+	}{
+		{"Late", "was due", false}, // overdue has its own section, no ⏰
+		{"Soon", "⬜ not submitted yet", true},
+		{"SoonDraft", "📝 draft, not submitted", true},
+		{"SoonDone", "✅ submitted", false},
+		{"Later", "⬜ not submitted yet", false},
+	} {
+		head := "**[" + tt.title + "](https://m.test/a)**"
+		i := strings.Index(out, head)
+		if i < 0 {
+			t.Fatalf("%s missing:\n%s", tt.title, out)
+		}
+		lineStart := strings.LastIndex(out[:i], "\n") + 1
+		if got := strings.HasPrefix(out[lineStart:], "- ⏰ "); got != tt.urgent {
+			t.Errorf("%s: urgent mark = %v, want %v:\n%s", tt.title, got, tt.urgent, out)
+		}
+		lines := strings.SplitN(out[i:], "\n", 3)
+		if len(lines) < 2 || !strings.Contains(lines[1], tt.want) {
+			t.Errorf("%s: second line %q, want %q", tt.title, lines, tt.want)
+		}
+	}
+	if strings.Contains(out, "❌") && strings.Count(out, "❌") != 1 {
+		t.Errorf("only the overdue item gets ❌:\n%s", out)
+	}
+}
+
+func TestGradeNumbers(t *testing.T) {
+	t.Parallel()
+	pct := 87.5
+	for display, want := range map[string]string{
+		"87,50": "**87.5** / 100", "100,00": "**100** / 100", "-1,5": "**-1.5** / 100",
+		"Sehr gut": "**Sehr gut** / 100", "87.50": "**87.50** / 100", "B+": "**B+** / 100",
+	} {
+		out := render.Grades(study.GradesResult{Courses: []study.CourseGrades{{
+			Course: study.CourseRef{Label: "C"},
+			Items:  []study.Grade{{Name: "H", Display: display, Max: 100, Percent: &pct}},
+		}}}, now)
+		if !strings.Contains(out, want) {
+			t.Errorf("%q: want %q in:\n%s", display, want, out)
+		}
+	}
+}

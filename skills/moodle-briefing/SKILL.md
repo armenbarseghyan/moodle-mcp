@@ -1,7 +1,7 @@
 ---
 name: moodle-briefing
-description: Study briefing from Moodle (FH JOANNEUM) — what is urgent, what teachers announced, what is due and whether it is submitted. Use this skill whenever the user asks about their studies in general or about the near future, in any language — "what's due this week", "anything urgent on moodle?", "did I miss anything?", "good morning, what's up at uni", "was steht diese Woche an", "habe ich etwas verpasst" — even if Moodle is not named, and for daily or weekly check-ins. Do not use it to find a specific material (moodle-materials) or to work through one assignment (moodle-assignment).
-allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Read, Glob
+description: Study briefing from Moodle (FH JOANNEUM) — what is urgent, what teachers announced, what is due and whether it is submitted. Use this skill whenever the user asks about their studies in general or about the near future, in any language — "what's due this week", "anything urgent on moodle?", "did I miss anything?", "what's new?", "did they upload anything?", "good morning, what's up at uni", "was steht diese Woche an", "habe ich etwas verpasst" — even if Moodle is not named, and for daily or weekly check-ins. Do not use it to find a specific material (moodle-materials) or to work through one assignment (moodle-assignment).
+allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_whats_new, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Read, Glob
 ---
 
 # Study briefing
@@ -28,6 +28,19 @@ Pick the window from the question:
 | unspecified, "this week" | 7 | 7 |
 | "next two weeks", "soon" | 7 | 14 |
 | "this month" | 14 | 30 |
+
+**"What's new" / "did I miss anything" / back after a few days off** — call `moodle_whats_new`
+(`days` = the time away, default 7) together with `moodle_deadlines`. It covers announcements,
+new or updated files and new grades in one call, so you don't need `moodle_announcements`
+then. New files go into their own block:
+
+```markdown
+### 📄 New material
+- **<course>**: <what it is, in words: "R2 lecture slides and the task sheet"> · [file](<link>)
+```
+
+Group several files of one lecture into one line; an *updated* task sheet or syllabus is worth
+a sentence ("the R1 sheet was updated — re-read it before submitting").
 
 Call `moodle_grades` only if the user asked about grades or an announcement says grades are
 out ("Noten sind online"). It is not part of the default briefing.

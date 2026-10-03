@@ -70,7 +70,8 @@ a:hover { text-decoration: underline; }
 
 /* kpis */
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin: 16px 0 24px; }
-.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.kpi { display: block; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); transition: transform .12s, border-color .12s; }
+a.kpi:hover { text-decoration: none; transform: translateY(-1px); border-color: var(--accent); }
 .kpi .n { font-size: 28px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
 .kpi .l { color: var(--muted); font-size: 13px; }
 .kpi.red .n { color: var(--red); } .kpi.amber .n { color: var(--amber); } .kpi.green .n { color: var(--green); } .kpi.blue .n { color: var(--blue); }
@@ -111,8 +112,8 @@ h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: va
 }
 .chip.done { background: var(--green-soft); color: var(--green); }
 .chip.draft { background: var(--amber-soft); color: var(--amber); }
-.chip.todo, .chip.overdue { background: var(--red-soft); color: var(--red); }
-.chip.na { background: var(--blue-soft); color: var(--blue); }
+.chip.overdue, .chip.reopened { background: var(--red-soft); color: var(--red); }
+.chip.todo { background: var(--blue-soft); color: var(--blue); }
 .kind { font-size: 12px; color: var(--faint); margin-left: 6px; }
 
 /* announcements */
@@ -134,6 +135,18 @@ h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: va
 .meter { height: 6px; border-radius: 99px; background: var(--grey-soft); margin-top: 8px; overflow: hidden; }
 .meter > i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--hero-1), var(--hero-3)); }
 .grade .c { color: var(--muted); font-size: 12.5px; }
+.grade .v small { color: var(--muted); font-weight: 600; margin-left: 6px; }
+.grade.total { background: var(--surface-2); }
+.grade.total .h > :first-child { font-weight: 700; color: var(--text); }
+.grade blockquote { margin: 8px 0 0; padding: 6px 12px; border-left: 3px solid var(--green); background: var(--green-soft); border-radius: 0 10px 10px 0; font-size: 13.5px; }
+
+/* new material */
+.mat { padding: 11px 18px; border-top: 1px solid var(--border); display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+.mat:first-child { border-top: 0; }
+.mat .badge { grid-row: span 2; align-self: start; margin-top: 2px; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 7px; background: var(--green-soft); color: var(--green); }
+.mat .badge.upd { background: var(--amber-soft); color: var(--amber); }
+.mat .t { font-weight: 600; overflow-wrap: anywhere; }
+.mat .m { color: var(--muted); font-size: 12.5px; }
 
 .courses { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 16px; }
 .courses a { background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--text); }
@@ -154,9 +167,12 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
 .ev { display: block; margin-top: 4px; font-size: 11.5px; line-height: 1.3; padding: 3px 6px; border-radius: 6px;
       background: var(--grey-soft); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ev.done, .ev.graded { background: var(--green-soft); color: var(--green); }
-.ev.todo, .ev.overdue, .ev.reopened { background: var(--red-soft); color: var(--red); }
+.ev.overdue, .ev.reopened { background: var(--red-soft); color: var(--red); }
 .ev.draft { background: var(--amber-soft); color: var(--amber); }
-.ev.na, .ev.unknown { background: var(--blue-soft); color: var(--blue); }
+.ev.todo, .ev.na, .ev.unknown { background: var(--blue-soft); color: var(--blue); }
+.ev .sh { display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
 .ev.ann { background: var(--accent-soft); color: var(--accent); }
 
 /* plan */
@@ -169,9 +185,12 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 @media (max-width: 600px) {
-  .cell { min-height: 46px; padding: 4px; }
-  .ev { font-size: 0; padding: 0; height: 6px; margin-top: 3px; border-radius: 3px; background: currentColor; }
-  .ev.ann { background: var(--accent); }
+  .cell { min-height: 52px; padding: 4px; }
+  /* phones: a short label instead of the full "17:15 Homework R1" */
+  .ev { font-size: 9.5px; line-height: 1.15; padding: 2px 3px; margin-top: 3px; border-radius: 4px;
+        white-space: normal; text-overflow: clip; overflow-wrap: anywhere; }
+  .ev .tm, .ev .full { display: none; }
+  .ev .sh { display: inline; }
 }
 @media (max-width: 480px) {
   .hero { padding: 22px 18px; border-radius: 18px; }
@@ -196,17 +215,18 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   <div class="kpis" id="kpis"></div>
 
   <section id="cal-sec" hidden><h2 data-i18n="calendar"></h2>
-    <div class="card cal"><div class="cal-head" id="cal-head"></div><div class="cal-grid" id="cal-grid"></div></div>
+    <div class="card cal"><div class="cal-head" id="cal-head"></div><div class="cal-grid" id="cal-grid"></div><div class="legend" id="legend"></div></div>
   </section>
 
   <div class="grid">
     <div>
       <section id="urgent-sec"><h2 data-i18n="urgent"></h2><div class="urgent" id="urgent"></div></section>
-      <section><h2 data-i18n="deadlines"></h2><div class="card" id="timeline"></div></section>
+      <section id="deadlines-sec"><h2 data-i18n="deadlines"></h2><div class="card" id="timeline"></div></section>
+      <section id="materials-sec" hidden><h2 data-i18n="materials"></h2><div class="card" id="materials"></div></section>
     </div>
     <div>
       <section id="plan-sec" hidden><h2 data-i18n="plan"></h2><ol class="card plan" id="plan"></ol></section>
-      <section><h2 data-i18n="announcements"></h2><div class="card" id="announcements"></div></section>
+      <section id="ann-sec"><h2 data-i18n="announcements"></h2><div class="card" id="announcements"></div></section>
       <section id="grades-sec" hidden><h2 data-i18n="grades"></h2><div class="card" id="grades"></div></section>
       <section id="courses-sec" hidden><h2 data-i18n="courses"></h2><div class="card courses" id="courses"></div></section>
       <div class="notes" id="notes"></div>
@@ -224,13 +244,14 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   // Labels per language; add an entry to support another language.
   var I18N = {
     en: { urgent: "🔴 Urgent", deadlines: "📅 Deadlines", announcements: "📣 Announcements", grades: "🎓 Grades",
-          courses: "📚 Courses", calendar: "🗓 Calendar", plan: "🧭 Plan",
+          courses: "📚 Courses", calendar: "🗓 Calendar", plan: "🧭 Plan", materials: "📄 New material",
           days: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], calm: "Nothing urgent ✨", noDeadlines: "No deadlines in this period.",
           noAnn: "No new announcements.", kUrgent: "urgent", kDeadlines: "deadlines", kAnn: "announcements",
-          kDone: "submitted", updated: "updated", footer: "Built from Moodle · read-only", theme: "◐ Theme",
+          kDone: "done", kOf: " of ", updated: "updated", added: "NEW", changed: "UPDATED", footer: "Built from Moodle · read-only", theme: "◐ Theme",
           title: "Studies",
-          s: { done: "✅ submitted", graded: "✅ graded", draft: "📝 draft", todo: "❌ not submitted",
-               overdue: "⏰ overdue", reopened: "↩️ resubmit", unknown: "?" } }
+          legend: { overdue: "overdue", todo: "to do", draft: "draft", done: "done", ann: "announcement" },
+          s: { done: "✅ submitted", graded: "✅ graded", draft: "📝 draft — submit it", todo: "⬜ to do",
+               overdue: "❌ overdue", reopened: "↩️ resubmit", unknown: "?" } }
   };
   var lang = I18N[data.lang] ? data.lang : "en";
   var T = I18N[lang];
@@ -265,7 +286,7 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   }
   var STATUS = T.s;
   function chip(status, label) {
-    var cls = status === "graded" ? "done" : status === "reopened" ? "todo" : status;
+    var cls = status === "graded" ? "done" : status;
     return el("span", "chip " + (cls || ""), label || STATUS[status] || status || "");
   }
 
@@ -279,14 +300,15 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
   var done = deadlines.filter(function (d) { return d.status === "done" || d.status === "graded"; }).length;
   var assignable = deadlines.filter(function (d) { return d.status && d.status !== "na"; }).length;
   var kpis = [
-    { n: urgent.length, l: T.kUrgent, c: urgent.length ? "red" : "green" },
-    { n: deadlines.length, l: T.kDeadlines, c: "blue" },
-    { n: anns.length, l: T.kAnn, c: anns.some(function (a) { return a.unread; }) ? "amber" : "" },
-    { n: assignable ? done + "/" + assignable : "—", l: T.kDone, c: "green" }
+    { n: urgent.length, l: T.kUrgent, c: urgent.length ? "red" : "green", to: "urgent-sec" },
+    { n: deadlines.length, l: T.kDeadlines, c: "blue", to: "deadlines-sec" },
+    { n: anns.length, l: T.kAnn, c: anns.some(function (a) { return a.unread; }) ? "amber" : "", to: "ann-sec" },
+    { n: assignable ? done + T.kOf + assignable : "—", l: T.kDone, c: "green", to: "deadlines-sec" }
   ];
   var kp = document.getElementById("kpis");
   kpis.forEach(function (k) {
-    var c = el("div", "kpi " + k.c); c.appendChild(el("div", "n", String(k.n))); c.appendChild(el("div", "l", k.l)); kp.appendChild(c);
+    var c = el("a", "kpi " + k.c); c.href = "#" + k.to;
+    c.appendChild(el("div", "n", String(k.n))); c.appendChild(el("div", "l", k.l)); kp.appendChild(c);
   });
 
   var u = document.getElementById("urgent");
@@ -358,15 +380,41 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
       cell.appendChild(el("div", "num", d.getUTCDate() + (d.getUTCDate() === 1 ? "." + (d.getUTCMonth() + 1) : "")));
       dated.forEach(function (x) {
         if (x.date !== key) return;
-        var e = link((x.time ? x.time + " " : "") + x.title, x.url, "ev " + (x.status || "na"));
-        e.title = [x.title, x.course, x.time].filter(Boolean).join(" · ");
+        var e = link("", x.url, "ev " + (x.status || "na"));
+        if (x.time) e.appendChild(el("span", "tm", x.time + " "));
+        e.appendChild(el("span", "full", x.title));
+        e.appendChild(el("span", "sh", x.short || x.title));
+        e.title = [x.title, x.course, x.time, STATUS[x.status]].filter(Boolean).join(" · ");
         cell.appendChild(e);
       });
       (annDays[key] || []).forEach(function (a) {
-        var e = link("📣 " + a.title, a.url, "ev ann"); e.title = a.title; cell.appendChild(e);
+        var e = link("", a.url, "ev ann"); e.title = a.title;
+        e.appendChild(el("span", "full", "📣 " + a.title)); e.appendChild(el("span", "sh", "📣"));
+        cell.appendChild(e);
       });
       grid.appendChild(cell);
     }
+    var lg = document.getElementById("legend");
+    [["overdue", "--red"], ["todo", "--blue"], ["draft", "--amber"], ["done", "--green"], ["ann", "--accent"]].forEach(function (p) {
+      var used = p[0] === "ann" ? anns.length : dated.some(function (x) {
+        return x.status === p[0] || (p[0] === "done" && x.status === "graded") || (p[0] === "todo" && (x.status === "na" || !x.status));
+      });
+      if (!used) return;
+      var sp = el("span", "", T.legend[p[0]]); sp.style.setProperty("--c", "var(" + p[1] + ")"); lg.appendChild(sp);
+    });
+  }
+
+  var mats = data.materials || [];
+  if (mats.length) {
+    document.getElementById("materials-sec").hidden = false;
+    var mt = document.getElementById("materials");
+    mats.forEach(function (x) {
+      var r = el("div", "mat");
+      r.appendChild(el("span", "badge" + (x.added === false ? " upd" : ""), x.added === false ? T.changed : T.added));
+      r.appendChild(link(x.title, x.url, "t"));
+      r.appendChild(el("div", "m", [x.course, x.where, x.rel].filter(Boolean).join(" · ")));
+      mt.appendChild(r);
+    });
   }
 
   var plan = data.plan || [];
@@ -397,10 +445,14 @@ footer { margin-top: 28px; color: var(--faint); font-size: 12.5px; text-align: c
     document.getElementById("grades-sec").hidden = false;
     var gr = document.getElementById("grades");
     grades.forEach(function (g) {
-      var c = el("div", "grade");
-      var h = el("div", "h"); h.appendChild(link(g.item, g.url)); h.appendChild(el("span", "v", g.grade || "—"));
+      var c = el("div", "grade" + (g.total ? " total" : ""));
+      var h = el("div", "h"); h.appendChild(link(g.item, g.url));
+      var v = el("span", "v", g.grade || "—");
+      if (typeof g.percent === "number") v.appendChild(el("small", "", Math.round(g.percent * 10) / 10 + "%"));
+      h.appendChild(v);
       c.appendChild(h);
       c.appendChild(el("div", "c", g.course || ""));
+      if (g.feedback) c.appendChild(el("blockquote", "", g.feedback));
       if (typeof g.percent === "number") {
         var m = el("div", "meter"), i = el("i"); i.style.width = Math.max(0, Math.min(100, g.percent)) + "%";
         m.appendChild(i); c.appendChild(m);

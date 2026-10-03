@@ -105,6 +105,7 @@ type File struct {
 	Name     string
 	URL      string // browser URL: /pluginfile.php/..., never contains a token
 	Size     int64
+	Created  time.Time // zero when Moodle doesn't say
 	Modified time.Time
 }
 

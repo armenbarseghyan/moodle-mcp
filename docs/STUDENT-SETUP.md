@@ -243,7 +243,7 @@ Add them as further `-e NAME=value` when registering.
   be passed separately, attendance, exemption exams) to `~/.config/moodle-mcp/courses/`.
   Check the table it shows you and confirm. Answers about grades, assignments and priorities
   then use these rules.
-- **Try:** *"what's due this week?"*, *"how do I connect to the lab VM from home?"*,
+- **Try:** *"what's due this week?"*, *"anything new since Monday?"*, *"how do I connect to the lab VM from home?"*,
   *"what do I need to do for Homework R2?"*, *"how are my grades?"*,
   *"make a dashboard of my next two weeks"*. Links in answers open in your browser, where you
   are signed in to Moodle.

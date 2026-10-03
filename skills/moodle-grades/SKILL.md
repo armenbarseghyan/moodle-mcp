@@ -37,7 +37,7 @@ Template (write the headings in the user's language):
 ### <Course>
 | Work | Grade | % | Graded |
 |---|---|---|---|
-| [Homework R1](…) | **87.50** / 100 | 87.5 % | 01.10 |
+| [Homework R1](…) | **87.5** / 100 | 87.5 % | 01.10 |
 
 💬 **Feedback on Homework R1:** "<teacher's text, original>" — <translation if needed>
 ⏳ Not graded yet: N · 📊 Course total: **…**

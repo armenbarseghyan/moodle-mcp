@@ -31,6 +31,7 @@ type Deps struct {
 // Instructions are sent to the client on initialisation.
 const Instructions = `Read-only access to an FH JOANNEUM student's Moodle.
 What is due and when: moodle_deadlines. What teachers posted: moodle_announcements (check first, it is often the most urgent).
+What changed lately — new or updated files, announcements, grades — in one call: moodle_whats_new.
 Find material without knowing the course: moodle_search; a course's structure: moodle_course_contents.
 Links in answers open in the user's browser, where they are signed in to Moodle — pass them on as they are.
 Use moodle_download only when a file is needed locally. All dates are Europe/Vienna.`
@@ -119,6 +120,19 @@ func Register(s *mcp.Server, d Deps) {
 	}, func(ctx context.Context, in AnnouncementsIn) (string, error) {
 		r, err := d.Service.Announcements(ctx, orDefault(in.Days, 7), in.Refresh)
 		return render.Announcements(r, d.Now()), err
+	})
+
+	add(s, d, &mcp.Tool{
+		Name:  "moodle_whats_new",
+		Title: "What's new",
+		Description: "Everything that changed in the active courses in the last N days, in one call: " +
+			"new or updated files (lecture slides, task sheets, pages), announcements and new grades. " +
+			"Use for \"what's new\", \"did they upload anything\", catching up after a few days off.",
+		Annotations: ro,
+		InputSchema: schema[WhatsNewIn](map[string]prop{"days": {Default: 7, Min: ptr(1.0), Max: ptr(60.0)}}),
+	}, func(ctx context.Context, in WhatsNewIn) (string, error) {
+		r, err := d.Service.WhatsNew(ctx, orDefault(in.Days, 7), in.Refresh)
+		return render.WhatsNew(r, d.Now()), err
 	})
 
 	add(s, d, &mcp.Tool{

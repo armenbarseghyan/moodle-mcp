@@ -140,6 +140,9 @@ func TestToolsGolden(t *testing.T) {
 		{"grades.one", "moodle_grades", map[string]any{"course": "programming"}},
 		{"announcements", "moodle_announcements", nil},
 		{"announcements.1d", "moodle_announcements", map[string]any{"days": 1}},
+		{"whats_new", "moodle_whats_new", nil},
+		{"whats_new.5d", "moodle_whats_new", map[string]any{"days": 5}},
+		{"whats_new.1d", "moodle_whats_new", map[string]any{"days": 1}},
 		{"whoami", "moodle_whoami", nil},
 	}
 	e := setup(t, moodletest.Token)
@@ -219,7 +222,7 @@ func TestCaching(t *testing.T) {
 func TestInvalidToken(t *testing.T) {
 	e := setup(t, "revoked-token")
 	for _, tool := range []string{"moodle_courses", "moodle_deadlines", "moodle_search", "moodle_grades",
-		"moodle_announcements", "moodle_whoami"} {
+		"moodle_announcements", "moodle_whats_new", "moodle_whoami"} {
 		args := map[string]any{}
 		if tool == "moodle_search" {
 			args["query"] = "git"
@@ -287,7 +290,7 @@ func TestListTools(t *testing.T) {
 		byName[tl.Name] = tl
 	}
 	want := []string{"moodle_courses", "moodle_deadlines", "moodle_course_contents", "moodle_search",
-		"moodle_grades", "moodle_announcements", "moodle_download", "moodle_whoami"}
+		"moodle_grades", "moodle_announcements", "moodle_whats_new", "moodle_download", "moodle_whoami"}
 	if len(byName) != len(want) {
 		t.Errorf("tools = %d, want %d", len(byName), len(want))
 	}

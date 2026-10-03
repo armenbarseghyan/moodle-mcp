@@ -35,6 +35,11 @@ type AnnouncementsIn struct {
 	Refresh bool `json:"refresh,omitempty" jsonschema:"bypass the cache and ask Moodle again"`
 }
 
+type WhatsNewIn struct {
+	Days    int  `json:"days,omitempty" jsonschema:"how many past days to include"`
+	Refresh bool `json:"refresh,omitempty" jsonschema:"bypass the cache and ask Moodle again"`
+}
+
 type DownloadIn struct {
 	FileURL string `json:"fileurl" jsonschema:"link to a file of this Moodle (…/pluginfile.php/… or …/webservice/pluginfile.php/…)"`
 	Dest    string `json:"dest,omitempty" jsonschema:"folder or full file path; empty means MOODLE_DOWNLOAD_DIR or ~/Downloads/moodle"`

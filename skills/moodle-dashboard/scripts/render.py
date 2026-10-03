@@ -34,7 +34,7 @@ def validate(d):
     iso = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     if d.get("today") and not iso.match(str(d["today"])):
         errs.append("today must be YYYY-MM-DD")
-    for key in ("urgent", "deadlines", "announcements", "grades", "courses", "notes", "plan"):
+    for key in ("urgent", "deadlines", "announcements", "grades", "courses", "notes", "plan", "materials"):
         if key in d and not isinstance(d[key], list):
             errs.append(f"{key} must be a list")
     for i, x in enumerate(d.get("deadlines", [])):
@@ -51,6 +51,11 @@ def validate(d):
     for i, x in enumerate(d.get("announcements", [])):
         if not x.get("title"):
             errs.append(f"announcements[{i}].title is required")
+    for i, x in enumerate(d.get("materials", [])):
+        if not x.get("title"):
+            errs.append(f"materials[{i}].title is required")
+        if "added" in x and not isinstance(x["added"], bool):
+            errs.append(f"materials[{i}].added must be true or false")
     for i, x in enumerate(d.get("grades", [])):
         if "percent" in x and x["percent"] is not None and not isinstance(x["percent"], (int, float)):
             errs.append(f"grades[{i}].percent must be a number")
@@ -63,7 +68,7 @@ def validate(d):
 
 
 def urls(d):
-    for key in ("urgent", "deadlines", "announcements", "grades", "courses"):
+    for key in ("urgent", "deadlines", "announcements", "grades", "courses", "materials"):
         for i, x in enumerate(d.get(key, []) or []):
             if isinstance(x, dict) and x.get("url"):
                 yield f"{key}[{i}].url", x["url"]

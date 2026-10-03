@@ -70,7 +70,7 @@ func (s *Service) Announcements(ctx context.Context, days int, refresh bool) (An
 			res.Items = append(res.Items, a)
 		}
 	}
-	slices.SortStableFunc(res.Items, func(a, b Announcement) int { return latest(b).Compare(latest(a)) })
+	slices.SortStableFunc(res.Items, func(a, b Announcement) int { return b.Changed().Compare(a.Changed()) })
 	res.FetchedAt = stamp.t
 	return res, nil
 }
@@ -101,7 +101,8 @@ func ToAnnouncement(course CourseRef, d moodle.Discussion, base string) Announce
 	return a
 }
 
-func latest(a Announcement) time.Time {
+// Changed is when the announcement was posted or, if later, last edited.
+func (a Announcement) Changed() time.Time {
 	if a.Edited.After(a.Posted) {
 		return a.Edited
 	}

@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -69,17 +70,19 @@ func Deadlines(r study.DeadlinesResult, now time.Time) string {
 	d.line("## Deadlines until %s (%s)", textfmt.Day(last), tr("%d days", r.Days))
 	if len(r.Overdue) > 0 {
 		d.blank()
-		d.line("**Overdue and not submitted**")
+		d.line("### %s", tr("Overdue — not submitted"))
 		for _, x := range r.Overdue {
-			d.line("- %s", deadlineLine(x, now))
+			deadlineItem(d, x, now, true)
 		}
 	}
 	d.blank()
 	if len(r.Upcoming) == 0 {
 		d.line("No deadlines in this period.")
+	} else if len(r.Overdue) > 0 {
+		d.line("### %s", tr("Coming up"))
 	}
 	for _, x := range r.Upcoming {
-		d.line("- %s", deadlineLine(x, now))
+		deadlineItem(d, x, now, false)
 	}
 	if r.Hidden > 0 || len(r.Warnings) > 0 {
 		d.blank()
@@ -94,15 +97,38 @@ func Deadlines(r study.DeadlinesResult, now time.Time) string {
 	return d.finish(now, r.FetchedAt)
 }
 
-func deadlineLine(x study.Deadline, now time.Time) string {
-	parts := []string{when(x.Due, now), x.Course.Label, link(x.Title, x.URL), kindLabel(x.Key.Module)}
-	if s := statusLabel(x.Key.Module, x.Status); s != "" {
-		parts = append(parts, s)
+// urgentWithin marks open work due this soon with ⏰.
+const urgentWithin = 48 * time.Hour
+
+// deadlineItem writes two lines: what (title, course, kind), then when and
+// the status, so a long list stays scannable.
+func deadlineItem(d *doc, x study.Deadline, now time.Time, overdue bool) {
+	title := "**" + link(x.Title, x.URL) + "**"
+	open := x.Status == study.SubmissionNotSubmitted || x.Status == study.SubmissionDraft ||
+		x.Status == study.SubmissionReopened || x.Status == study.SubmissionInProgress
+	if !overdue && open && x.Due.Sub(now) < urgentWithin {
+		title = "⏰ " + title
 	}
-	return strings.Join(parts, " · ")
+	d.line("- %s · %s · %s", title, x.Course.Label, kindLabel(x.Key.Module))
+	due := tr("due %s", when(x.Due, now))
+	if overdue {
+		due = tr("was due %s", when(x.Due, now))
+	}
+	if s := statusLabel(x.Key.Module, x.Status, overdue); s != "" {
+		due += " · " + s
+	}
+	d.line("  %s", due)
 }
 
-func statusLabel(module string, s study.Submission) string {
+// statusLabel names the submission state. Before the deadline, "not submitted"
+// is a neutral to-do (⬜); only overdue work gets the red ❌.
+func statusLabel(module string, s study.Submission, overdue bool) string {
+	if s == study.SubmissionNotSubmitted && !overdue {
+		if module == "quiz" {
+			return tr("⬜ not attempted yet")
+		}
+		return tr("⬜ not submitted yet")
+	}
 	if module == "quiz" {
 		switch s {
 		case study.SubmissionNotSubmitted:
@@ -314,10 +340,10 @@ func Grades(r study.GradesResult, now time.Time) string {
 			}
 		}
 		if cg.Pending > 0 {
-			d.line("- not graded yet: %d", cg.Pending)
+			d.line("- ⏳ %s", tr("%d items not graded yet", cg.Pending))
 		}
 		if cg.Total != nil {
-			d.line("- Course total: %s", gradeValue(*cg.Total))
+			d.line("- %s", tr("Course total: %s", gradeValue(*cg.Total)))
 		}
 	}
 	if len(empty) > 0 {
@@ -348,11 +374,27 @@ func gradeValue(g study.Grade) string {
 	if g.Display == "" {
 		return tr("not graded")
 	}
-	s := "**" + g.Display + "**"
+	s := "**" + plainNumber(g.Display) + "**"
 	if g.Max > 0 && g.Percent != nil {
 		s += fmt.Sprintf(" / %s (%s%%)", trimFloat(g.Max), trimFloat(*g.Percent))
 	}
 	return s
+}
+
+// germanNumber is a decimal written with a comma, as this site formats grades.
+var germanNumber = regexp.MustCompile(`^-?\d+,\d+$`)
+
+// plainNumber writes Moodle's "87,50" as "87.5", matching the maximum and the
+// percentage next to it. Letters, scales and other formats stay as they are.
+func plainNumber(display string) string {
+	if !germanNumber.MatchString(display) {
+		return display
+	}
+	f, err := strconv.ParseFloat(strings.Replace(display, ",", ".", 1), 64)
+	if err != nil {
+		return display
+	}
+	return trimFloat(f)
 }
 
 // trimFloat renders 100 as "100" and 87.5 as "87.5". Moodle's own formatted
@@ -464,4 +506,73 @@ func NotFound(e *study.NotFoundError) string {
 		}
 	}
 	return d.finish(time.Time{}, time.Time{})
+}
+
+// WhatsNew renders moodle_whats_new: materials grouped by course, then
+// announcements and grades, each in one line so the whole week fits a glance.
+func WhatsNew(r study.WhatsNewResult, now time.Time) string {
+	d := newDoc()
+	d.line("## What's new in the last %s", tr("%d days", r.Days))
+	if len(r.Materials)+len(r.Announcements)+len(r.Graded) == 0 {
+		d.blank()
+		d.line("Nothing new in your courses in this period.")
+	}
+
+	if len(r.Materials) > 0 {
+		d.blank()
+		d.line("### 📄 %s", tr("%d new or updated files", len(r.Materials)))
+		var order []string
+		byCourse := map[string][]study.NewMaterial{}
+		for _, m := range r.Materials {
+			if _, ok := byCourse[m.Course.Label]; !ok {
+				order = append(order, m.Course.Label)
+			}
+			byCourse[m.Course.Label] = append(byCourse[m.Course.Label], m)
+		}
+		for _, course := range order {
+			d.line("**%s**", course)
+			for _, m := range byCourse[course] {
+				mark := tr("🆕 new")
+				if !m.Added {
+					mark = tr("✏️ updated")
+				}
+				where := strings.Join(m.Path, " › ")
+				if m.Item.Name != "" && m.Item.URL != "" {
+					where += " › " + link(m.Item.Name, m.Item.URL)
+				}
+				// A server clock slightly ahead must not make an upload "in 1 h".
+				d.line("- %s %s · %s · %s", mark, link(m.File.Name, m.File.URL), where, textfmt.Relative(earliest(m.When(), now), now))
+			}
+		}
+	}
+
+	if len(r.Announcements) > 0 {
+		d.blank()
+		d.line("### 📣 %s", tr("%d announcements", len(r.Announcements)))
+		for _, a := range r.Announcements {
+			title := link(a.Title, a.URL)
+			if a.Unread {
+				title = "**" + title + "** · " + tr("unread")
+			}
+			d.line("- %s · %s · %s", title, a.Course.Label, textfmt.Relative(a.Changed(), now))
+		}
+		d.line("_Full text: moodle_announcements._")
+	}
+
+	if len(r.Graded) > 0 {
+		d.blank()
+		d.line("### 🎓 %s", tr("%d new grades", len(r.Graded)))
+		for _, g := range r.Graded {
+			d.line("- %s · %s", gradeLine(g.Grade), g.Course.Label)
+		}
+	}
+	courseErrors(d, r.Errors)
+	return d.finish(now, r.FetchedAt)
+}
+
+func earliest(a, b time.Time) time.Time {
+	if a.Before(b) {
+		return a
+	}
+	return b
 }

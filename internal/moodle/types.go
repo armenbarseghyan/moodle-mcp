@@ -83,6 +83,7 @@ type Content struct {
 	FileURL      string `json:"fileurl"`
 	FileSize     int64  `json:"filesize"`
 	MimeType     string `json:"mimetype"`
+	TimeCreated  Unix   `json:"timecreated"`
 	TimeModified Unix   `json:"timemodified"`
 }
 

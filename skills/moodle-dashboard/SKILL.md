@@ -1,7 +1,7 @@
 ---
 name: moodle-dashboard
-description: Visual study dashboard from Moodle (FH JOANNEUM) — a polished HTML page with "urgent" cards, a day-by-day deadline timeline with submission status, teacher announcements and grades, light and dark theme. Use this skill whenever the user wants to see their studies visually, in any language — "make a dashboard", "show my week as a page", "visualise my deadlines", "study overview page", "Übersicht als Seite" — or asks for a briefing as a page rather than text. For a plain text "what's due" use moodle-briefing.
-allowed-tools: mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Bash(python3:*), Bash(open:*), Write, Read, Glob
+description: Visual study dashboard from Moodle (FH JOANNEUM) — a polished HTML page with a calendar, "urgent" cards, a day-by-day deadline timeline with submission status, new course material, teacher announcements and grades with feedback, light and dark theme. Use this skill whenever the user wants to see their studies visually, in any language — "make a dashboard", "show my week as a page", "visualise my deadlines", "study overview page", "Übersicht als Seite" — or asks for a briefing as a page rather than text. For a plain text "what's due" use moodle-briefing.
+allowed-tools: mcp__moodle__moodle_whats_new, mcp__moodle__moodle_announcements, mcp__moodle__moodle_deadlines, mcp__moodle__moodle_grades, mcp__moodle__moodle_courses, Bash(python3:*), Bash(open:*), Write, Read, Glob
 ---
 
 # Visual dashboard
@@ -13,9 +13,10 @@ theme and print styles, so the page looks equally good every time.
 
 ## 1. Data
 
-Call in parallel: `moodle_deadlines(days=14)`, `moodle_announcements(days=7)`,
-`moodle_courses()`, and `moodle_grades()` (one call; include grades unless the user asked for
-deadlines only). Change the period if asked ("this month" → `days=30`).
+Call in parallel: `moodle_deadlines(days=14)`, `moodle_whats_new(days=7)` (announcements, new
+files and new grades in one call), `moodle_courses()`, and `moodle_grades()` (one call; include
+grades unless the user asked for deadlines only). Change the period if asked ("this month" →
+`days=30`).
 
 ## 2. JSON
 
@@ -39,16 +40,23 @@ sections are empty lists or absent; the template shows "nothing here" on its own
      "note": "Uploaded but not submitted for grading", "level": "amber"}
   ],
   "deadlines": [
-    {"date": "2026-10-05", "day": "Mon 05.10", "rel": "in 2 days", "time": "23:59", "title": "Quiz LaTeX Basics", "kind": "quiz",
-     "course": "Refresher on Unix Shells and LaTeX", "status": "na", "url": "https://…"}
+    {"date": "2026-10-05", "day": "Mon 05.10", "rel": "in 2 days", "time": "23:59", "title": "Quiz LaTeX Basics",
+     "short": "Quiz", "kind": "quiz", "course": "Refresher on Unix Shells and LaTeX", "status": "todo", "url": "https://…"}
+  ],
+  "materials": [
+    {"title": "PDP---Lecture-R2.pdf", "course": "Programming and Data Processing", "where": "R2 › Lecture",
+     "rel": "today", "added": true, "url": "https://…/pluginfile.php/…"}
   ],
   "announcements": [
     {"date": "2026-09-30", "title": "Raumänderung morgen", "course": "Refresher on Unix Shells and LaTeX", "when": "Wed 30.09, 09:30",
      "rel": "3 days ago", "summary": "Tomorrow's lecture moves to another room; bring a laptop.",
      "quote": "Raum 0.12", "unread": true, "url": "https://…/mod/forum/discuss.php?d=…"}
   ],
-  "grades": [{"item": "Homework R1", "course": "Programming and Data Processing", "grade": "87.50 / 100",
-              "percent": 87.5, "url": "https://…"}],
+  "grades": [{"item": "Homework R1", "course": "Programming and Data Processing", "grade": "87.5 / 100",
+              "percent": 87.5, "feedback": "Gute Arbeit, aber Plots beschriften. — Good work, but label your plots.",
+              "url": "https://…"},
+             {"item": "Course total", "course": "Programming and Data Processing", "grade": "87.5 / 100",
+              "percent": 87.5, "total": true}],
   "courses": [{"name": "Programming and Data Processing", "url": "https://…/course/view.php?id=…"}],
   "plan": ["Today: check whether Homework R0 is still accepted", "By Mon 23:59: Quiz LaTeX Basics", "Thu–Fri: Homework R2 (due Sat 10:00)"],
   "notes": ["1 more assignment is hidden by the teacher."]
@@ -59,10 +67,17 @@ Filling it in well is what makes the page useful:
 - `today` and each item's `date` (`YYYY-MM-DD`, Vienna) drive the calendar grid at the top: whole
   weeks around today and all deadlines, today highlighted, each deadline as a coloured chip.
 - `deadlines` — chronological, grouped by an identical `day` value. `kind` in the user's
-  language ("quiz"). `status`: `done`, `graded`,
-  `draft` (uploaded, not submitted), `todo` (not submitted), `overdue`, `reopened`, `na`
-  (quiz or not an assignment), `unknown`. Put overdue unsubmitted items here too, first, with
-  `overdue`.
+  language ("quiz"). `status`: `todo` (not submitted / not attempted yet — shown neutral, not
+  red), `draft` (uploaded, not submitted), `done` (submitted or quiz finished), `graded`,
+  `overdue` (past due and not submitted — the only red one), `reopened`, `na` (no status
+  applies), `unknown`. Put overdue unsubmitted items here too, first, with `overdue`.
+  `short` is the calendar label on phones: 2–8 characters that tell items apart ("HW R2",
+  "Quiz", "Unix HA"); without it the title is cut.
+- `materials` — from `moodle_whats_new`: new (`added: true`) or updated (`false`) files, newest
+  first, at most ~8. `where` is the section path, `title` the file name or what it is
+  ("R2 lecture slides"). Skip the list when nothing is new.
+- `grades` — `feedback`: the teacher's comment, original plus a short translation; add the
+  course total as its own entry with `"total": true`.
 - `urgent` — same rules as the text briefing: overdue and unsubmitted; unsubmitted and due in
   < 48 h; drafts; class moves from announcements. Phrase each as an **action** ("Submit the
   draft…"). `level: "amber"` for drafts and "soon"; omit it for red.

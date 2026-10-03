@@ -147,6 +147,7 @@ func (b treeBuilder) item(m moodle.Module, depth int) Item {
 				Name:     name + c.FileName,
 				URL:      BrowserFileURL(c.FileURL),
 				Size:     c.FileSize,
+				Created:  c.TimeCreated.Time(),
 				Modified: c.TimeModified.Time(),
 			})
 		}
